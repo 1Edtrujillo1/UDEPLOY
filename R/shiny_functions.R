@@ -11,8 +11,7 @@
 #' @author Eduardo Trujillo
 #'
 #' @import shiny
-#' @import dplyr
-#' @importFROM stringr str_glue
+#' @import stringr
 #'
 #' @return Using \code{image_href} and \code{title} return an HTML tag of the title bar
 #' @export

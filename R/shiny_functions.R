@@ -15,6 +15,7 @@
 #' @importFROM stringr str_glue
 #'
 #' @return Using \code{image_href} and \code{title} return an HTML tag of the title bar
+#' @export
 #'
 #' @note Add this function inside a UI in your shiny app.
 #'
@@ -22,7 +23,7 @@
 #' \dontrun{
 #' title_bar(image_href = "www.image_reference.com", title = "example")
 #' }
-#' #' @export
+#'
 title_bar <- function(image_href, title){
 
   image_href <- shQuote(image_href, type = "sh")

@@ -3,6 +3,7 @@
 export(UIelement)
 export(image_title)
 export(nav_tabPanel)
+export(personalize_jumbotron)
 export(rightInputs_Navbar)
 export(title_bar)
 import(htmltools)

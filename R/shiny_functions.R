@@ -192,5 +192,73 @@ nav_tabPanel <- function(id, title, outputID, TITLE){
   })
 }
 
+# JUMBOTRON ---------------------------------------------------------------
 
+#' personalize_jumbotron
+#'
+#' Create a personalized jumbotron
+#'
+#' This function allows you to make a particular example of jumbotron
+#'
+#' @param image_href url-link of an image to show in the jumbotron
+#' @param width_text width of the text square
+#' @param heigth_text width of the text square
+#' @param header_text title of the text square
+#' @param text the string of a phrase you want to share
+#' @param cited who made the text quote
+#' @param href link to open as a reference of the quote
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @import stringr
+#'
+#' @return return a particular jumbotron with a quote insie of a text square
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' personalize_jumbotron(image_href = "www.image_reference.com",
+#' width_text = "600px", heigth_text = "305px",
+#' header_text = "TITLE EXAMPLE", text = p("Quote"), href = "#")
+#' }
+#'
+personalize_jumbotron <- function(image_href, width_text, heigth_text,
+                                  header_text, text, cited, href){
+
+  image_href <- shQuote(image_href, type = "sh")
+
+  div(
+    class = "jumbotron background",
+    style = str_glue("background:url({image_href});
+                   background-size:cover; padding-left:0px; padding-right:0px;
+                   height:796px;"),
+    div(
+      class = "",
+      fluidRow(
+        column(
+          width = 4,
+          offset = 1,
+          br(), br(), br(), br(),br(), br(), br(),br(),
+
+          div(
+            style = str_glue("background-color:#99999929;
+                             color:white;
+                             width:{width_text};
+                             height:{heigth_text};"),
+            h1(header_text),
+            tags$blockquote(
+              class = "blockquote",
+              text,
+              tags$footer(style = "color: white;",
+                          "Quote  by",
+                          tags$cite(title = cited, cited))
+            ),
+            a("Get Started", class = "btn btn-primary btn-lg", href = href)
+          )
+        )
+      )
+    )
+  )
+}
 

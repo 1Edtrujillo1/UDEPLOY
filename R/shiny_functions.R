@@ -262,6 +262,58 @@ personalize_jumbotron <- function(image_href, width_text, heigth_text,
   )
 }
 
+#' intermediate_bar
+#'
+#' Create an intermidiate personalized bar
+#'
+#' This function allows you to make an horizontal bar in your webpage
+#'
+#' @param image_href url-link of an image to show in the jumbotron
+#' @param size_text size of the text inside the bar
+#' @param text string text or tag text you want to share.
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @import stringr
+#'
+#' @return return a personalized bar with text that you want to share
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' intermediate_bar(image_href = "www.image_reference.com",
+#' size_text = "60px",
+#' text = "info to share"
+#' }
+#'
+intermediate_bar <- function(image_href, size_text, text){
+
+  image_href <- shQuote(image_href, type = "sh")
+
+  div(
+    class = "jumbotron",
+    style = str_glue("background:url({image_href});
+             background-size:cover; height:400px;
+             padding-left: 0px; padding-right: 0px;"),
+    div(
+      class = "",
+      fluidRow(
+        column(
+          width = 6,
+          offset = 1,
+          br(),br(),br(),br(),
+          div(
+            style = str_glue("color:#ffffffcc;
+                     font-family: spotify-circular, Helvetica, Arial, sans-serif;
+                     font-size:{size_text};"),
+            text
+          )
+        ) )
+    )
+  )
+}
+
 # PANEL -------------------------------------------------------------------
 
 #' interactive_panel

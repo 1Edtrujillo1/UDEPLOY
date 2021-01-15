@@ -213,7 +213,7 @@ nav_tabPanel <- function(id, title, outputID, TITLE){
 #' @import shiny
 #' @import stringr
 #'
-#' @return return a particular jumbotron with a quote insie of a text square
+#' @return return a particular jumbotron with a quote inside of a text square
 #' @export
 #'
 #' @example
@@ -229,7 +229,7 @@ personalize_jumbotron <- function(image_href, width_text, heigth_text,
   image_href <- shQuote(image_href, type = "sh")
 
   div(
-    class = "jumbotron background",
+    class = "jumbotron",
     style = str_glue("background:url({image_href});
                    background-size:cover; padding-left:0px; padding-right:0px;
                    height:796px;"),

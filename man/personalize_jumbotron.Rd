@@ -30,7 +30,7 @@ personalize_jumbotron(
 \item{href}{link to open as a reference of the quote}
 }
 \value{
-return a particular jumbotron with a quote insie of a text square
+return a particular jumbotron with a quote inside of a text square
 }
 \description{
 Create a personalized jumbotron

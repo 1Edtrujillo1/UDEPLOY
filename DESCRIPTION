@@ -16,4 +16,6 @@ Imports:
     shiny,
     stringr,
     purrr,
-    htmltools
+    htmltools,
+    shinyjs
+    

@@ -262,3 +262,149 @@ personalize_jumbotron <- function(image_href, width_text, heigth_text,
   )
 }
 
+# PANEL -------------------------------------------------------------------
+
+#' interactive_panel
+#'
+#' Create an personalized panel
+#'
+#' This function allows you to create an interactive personalized panel for
+#' your web application
+#'
+#' @param id module id
+#' @param image_href url-link of an image to show in the background of your panel
+#' @param icon_title string name of the icon in the heading part
+#' @param title string of text to show in the title header
+#' @param outputID output for the action Button
+#' @param ID_shinyJS id of the body to hide and show
+#' @param text_info the string of a phrase you want to add in your panel
+#' @param size_title pixels size of your title
+#' @param size_text pixels size of your body text
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @import stringr
+#' @importFROM shinyjs hidden
+#'
+#' @return return a beauty panel where you can hide or show the particular body text.
+#' @export
+#'
+#' @note Use this function at the same time with the function *interactive_panelOutput*.
+#'
+#' @example
+#' \dontrun{
+#' interactive_panel(id = "hello",
+#' image_href = "www.image_reference.com",
+#' icon_title = "code-branch",
+#' title = "TITLE",
+#' outputID = "down1",
+#' ID_shinyJS = "hidden1",
+#' text_info = "body example",
+#' size_title = "35px",
+#' size_text = "22px")
+#' }
+#'
+interactive_panel <- function(id, image_href, icon_title,
+                              title, outputID, ID_shinyJS,
+                              text_info, size_title, size_text){
+
+  image_href <- shQuote(image_href, type = "sh")
+
+  div(
+    class = "col-sm-4",
+    div(
+      class = "panel",
+      style = str_glue("background:url({image_href});
+                        background-size:cover;
+                        color:white;
+                        font-family:'Raleway';"),
+      div(
+        class = "panel-heading text-center",
+        icon(name = icon_title,
+             class = str_glue("fas fa-{icon_title} fa-4x"),
+             lib = "font-awesome"),
+        div(
+          style = str_glue("font-size:{size_title};"),
+          HTML(str_glue("<strong>{title}</strong>")),
+          actionButton(inputId = NS(id, outputID),
+                       label = NULL,
+                       icon = icon(name = "angle-down",
+                                   class = "fas fa-angle-down fa-1x",
+                                   lib = "font-awesome"),
+                       style = "background-color:transparent;
+                                    border-color: transparent;
+                                    color:white;")
+        ),
+        hr()
+      ),
+      div(
+        id = NS(id, ID_shinyJS),
+        class = "panel-body text-left text-capitalize",
+        style = str_glue("padding:10px; font-size:{size_text};"),
+        text_info
+      ) %>% hidden()
+    )
+  )
+}
+
+#' interactive_panelOutput
+#'
+#' Server part of the interactive_panel function
+#'
+#' This function allows you to make interactively your interactive_panel function
+#'
+#' @param id module id
+#' @param outputID output for the action Button
+#' @param ID_shinyJS id of the body to hide and show
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM shinyjs onclick toggle
+#'
+#' @return return the server side of the interactive_panel function
+#' @export
+#'
+#' @note Use this function at the same time with the function interactive_panel.
+#'
+#' @example
+#' \dontrun{
+#' interactive_panelOutput(id = "hello", outputID = "down1", ID_shinyJS = "hidden1")
+#' }
+#'
+interactive_panelOutput <- function(id, outputID, ID_shinyJS){
+  moduleServer(id, function(input, output, session){
+
+    counter <- reactiveValues()
+
+    counter[[outputID]] <- 0
+
+    btn_click <- eventReactive(pluck(input, outputID), {
+      TRUE
+
+      counter[[outputID]] <- counter[[outputID]] + 1
+    })
+
+    observeEvent(btn_click(),{
+      if((btn_click() %% 2) == 0){
+        updateActionButton(session = session,
+                           inputId = outputID,
+                           icon = icon(name = "angle-down",
+                                       class = "fas fa-angle-down fa-1x",
+                                       lib = "font-awesome"))
+      }else{
+        updateActionButton(session = session,
+                           inputId = outputID,
+                           icon = icon(name = "angle-up",
+                                       class = "fas fa-angle-up fa-1x",
+                                       lib = "font-awesome"))
+      }
+    })
+
+    onclick(id = outputID,{
+
+      toggle(id = ID_shinyJS, anim = TRUE, animType = "slide")
+    })
+  })
+}

@@ -2,6 +2,8 @@
 
 export(UIelement)
 export(image_title)
+export(interactive_panel)
+export(interactive_panelOutput)
 export(nav_tabPanel)
 export(personalize_jumbotron)
 export(rightInputs_Navbar)

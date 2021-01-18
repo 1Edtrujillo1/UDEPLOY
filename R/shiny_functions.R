@@ -351,6 +351,111 @@ intermediate_bar <- function(image_href, size_text, text){
   )
 }
 
+#' end_jumbotron
+#'
+#' Create the end of the webpage with a jumbotron
+#'
+#' This function allows you to make a particular design of end page
+#'
+#' @param icon_names name of the font-awesome icon.
+#' @param icon_class \code{"fab"} OR \code{"fas"} depend on font-awesome
+#' @param icon_href URL page or tab from the navbar page
+#' @param icon_ref_target \code{"link"} if is an URL link OR \code{"tab"} if is a tab of the navbar Page
+#' @param icon_target if is going to open in a new page \code{"_blank"} or in the same page \code{""}
+#' @param image_compamy image url of your company
+#' @param company_name name of your company
+#' @param terms_cond_ref link to open your terms and conditions of the webpage
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @import stringr
+#' @import purrr
+#'
+#' @return return the end of the web page as a jumbotron
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' end_jumbotron(icon_names = c("github", "envelope"),
+#' icon_class = c("fab", "fas"),
+#' icon_href = c("www.reference-page.com", "Tab from Nabar"),
+#' icon_target = c("_blank", ""),
+#' icon_ref_target = c("link", "tab"),
+#' image_compamy = "www.image-url.com",
+#' company_name = "Company",
+#' terms_cond_ref = "www.terms-cond.com")
+#' }
+#'
+end_jumbotron <- function(icon_names, icon_class, icon_href, icon_ref_target, icon_target,
+                          image_compamy, company_name, terms_cond_ref){
+  tryCatch({
+    if(
+      ((length(icon_names) == length(icon_class)) ==
+       (length(icon_href) == length(icon_ref_target))) ==
+      (length(icon_names) == length(icon_target))){
+
+      unlist_elements <- list_of_lists(no_sublists = length(icon_names),
+                                       element_sublists = tags$li())
+
+      elements <- pmap(list(icon_names, icon_class, icon_href, icon_ref_target, icon_target),
+                       function(name, class, href, ref_target, target){
+                         each <- a(icon(name = name,
+                                        class = str_glue("{class} fa-{name} fa-2x"),
+                                        lib = "font-awesome"),
+                                   target = target)
+
+                         if(ref_target == "link"){
+                           each$attribs <- each$attribs %>%
+                             append(list(href = href))
+
+                         }else if(ref_target == "tab"){
+                           each$attribs <- each$attribs %>%
+                             append(list(onclick =
+                                           str_glue("fakeClick({shQuote(href, type = 'sh')})")))
+                         }
+                         each
+                       })
+
+      for(i in 1:length(icon_names)){
+        pluck(unlist_elements, i)$children <- pluck(elements, i)
+      }
+
+      result <- div(
+        class = "jumbotron",
+        style = "background-color:#05192D; padding-left:0px; padding-right: 0px;
+                 color:white; font-family:-webkit-pictograph;",
+        div(
+          class = "",
+          fluidRow(
+            column(
+              width = 3,
+              offset = 1,
+              img(
+                class = "thumbnail img-responsive",
+                style = "background-color:transparent; border:none; width:150px;",
+                src = image_compamy),
+              p(icon(name = "copyright",
+                     class = "far fa-copyright",
+                     lib = "font-awesome"),
+                strong(company_name), "|",
+                a("Terms & Conditions", href = terms_cond_ref))
+            ))
+        ),
+        div(
+          class = "pull-right",
+          tags$ul(
+            class = "list-inline",
+            unlist_elements %>% do.call(what = tagList, args = .)
+          )
+        )
+      )
+    }
+    result
+  }, error = function(e){
+    "icon_names, icon_class, icon_href, icon_ref_target, icon_target need to have the same cardinality"})
+}
+
 # PANEL -------------------------------------------------------------------
 
 #' interactive_panel

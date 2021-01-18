@@ -1,5 +1,5 @@
 
-# WEB TITLE ---------------------------------------------------------------
+# WEB ELEMENTS ---------------------------------------------------------------
 
 #' title_bar
 #'
@@ -83,6 +83,43 @@ image_title <- function(src_image, width_image,
       style = style_image
     ), TITLE
   )
+}
+
+#' refernce_icon
+#'
+#' Create a reference shadow image.
+#'
+#' This function allows you to create an image with gray format that links to a web page.
+#'
+#' @param image_href url-link of the image
+#' @param href url-link of the reference web page of the icon
+#' @param width_image width of the image
+#' @param width_column width of the column in the fluidRow
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @import stringr
+#'
+#' @return return an image that refers to an URL link.
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' refernce_icon(image_href = "www.image_reference.com",
+#' href = "www.reference.com", width_image = "100px", width_column = 3)
+#' }
+#'
+refernce_icon <- function(image_href, href, width_image, width_column){
+  img(
+    class = "thumbnail img-responsive",
+    style = str_glue("border:none;
+                      width:{width_image};
+                      filter:opacity(30%) grayscale(1);
+                      padding:0px;"),
+    src = image_href
+  ) %>% a(href = href, target = "_blank") %>% column(width = width_column)
+
 }
 
 #' UIelement

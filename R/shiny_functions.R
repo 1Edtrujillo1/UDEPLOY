@@ -351,6 +351,87 @@ intermediate_bar <- function(image_href, size_text, text){
   )
 }
 
+#' intermediate_bar_icon
+#'
+#' Create an intermidiate personalized bar of icons
+#'
+#' This function allows you to make a jumbotron and a bar of icons
+#'
+#' @param title title of the information inside the jumbotron
+#' @param title_text referenced text of the jumbotron
+#' @param icon_name 3 names of icons.
+#' @param icon_class 3 classes of icons.
+#' @param icon_title 3 titles which refer to the information that describes the icon.
+#' @param icon_text_reference 3 texts which refer to the information that describes the icon.
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @import stringr
+#' @import purrr
+#'
+#' @return return a personalized jumbotron with referenced text and a bar with 3 icons information.
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' intermediate_bar_icon(title = "Want to visualize interactive analysis?",
+#' title_text = "Now you can, through AImagination.",
+#' icon_name = c("award", "check-circle", "cloudversify"),
+#' icon_class = c("fas", "far", "fab"),
+#' icon_title = c("icon title 1", "icon title 2", "icon title 3"),
+#' icon_text_reference = c("text icon 1", "text icon 2", "text icon 3))
+#' }
+#'
+intermediate_bar_icon <- function(title, title_text,
+                                  icon_name, icon_class,
+                                  icon_title, icon_text_reference){
+  tryCatch({
+    if(length(icon_name) == 3){
+
+      icon_information <- list(
+        icon_name = icon_name,
+        icon_class = icon_class,
+        icon_title = icon_title,
+        icon_text_reference = icon_text_reference)
+
+      result <- div(
+        div(
+          class = "jumbotron text-center",
+          style = "background-color:#F8F8F8; height:300px; font-family:-webkit-pictograph;",
+          p(strong(title), style = "font-size:48px;"),
+          p(title_text, style ="font-size:22px;")
+        ),
+        br(), br(), br(),
+        div(
+          class = "",
+          style = "font-family:system-ui;",
+          fluidRow(
+            map(1:length(icon_information), ~ do.call(
+              what =
+                function(icon_name, icon_class, icon_title, icon_text_reference){
+                  column(
+                    width = 4,
+                    div(
+                      class = "text-center",
+                      icon(name = icon_name,
+                           class = str_glue("{icon_class} fa-{icon_name} fa-8x"),
+                           lib = "font-awesome"),
+                      h3(strong(icon_title)),
+                      p(icon_text_reference,
+                        style = "font-size:larger; filter:opacity(60%);")
+                    )
+                  )},
+              args = map(icon_information, ..1))) %>%
+              do.call(what = tagList, args = .)
+          )
+        )
+      )
+    }
+    result
+  }, error = function(e) "You need to have only 3 icons")
+}
+
 #' end_jumbotron
 #'
 #' Create the end of the webpage with a jumbotron

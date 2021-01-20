@@ -17,5 +17,6 @@ Imports:
     stringr,
     purrr,
     htmltools,
-    shinyjs
-    
+    shinyjs,
+    mongolite,
+    jsonlite

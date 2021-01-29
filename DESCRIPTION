@@ -19,4 +19,8 @@ Imports:
     htmltools,
     shinyjs,
     mongolite,
-    jsonlite
+    jsonlite,
+    shinydashboardPlus,
+    waiter,
+    dplyr,
+    sodium

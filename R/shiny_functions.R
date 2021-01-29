@@ -143,6 +143,14 @@ refernce_icon <- function(image_href, href, width_image, width_column){
 #' @example
 #' \dontrun{
 #' UIelement(id = "module_id", outputID = "render_id")
+#'
+#' outputUI <- function(id){
+#' moduleServer(id, function(input, output, session){
+#' output$render_id <- renderUI({
+#'      ...
+#'    })
+#'  })
+#' }
 #' }
 #'
 UIelement <- function(id, outputID){
@@ -681,5 +689,310 @@ interactive_panelOutput <- function(id, outputID, ID_shinyJS){
 
       toggle(id = ID_shinyJS, anim = TRUE, animType = "slide")
     })
+  })
+}
+
+# LOG-IN ------------------------------------------------------------------
+
+#' loginUI
+#'
+#' Create an personalized log in to a web page
+#'
+#' This function allows you to create an interactive personalized log-in webpage
+#'
+#' @param id module id
+#' @param image_href url-link of an image to show in the log-in pannel and the load part
+#' @param title string of text to show in the title header
+#' @param error_message message string to show when your password is incorrect
+#' @param company_name name of your company to show in the footer sign up and in the load part
+#' @param header header of the dashboardPagePlus
+#' @param sidebar sidebar of the dashboardPagePlus
+#' @param body body of the dashboardPagePlus
+#' @param rightsidebar rightsidebar of the dashboardPagePlus
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM shinydashboardPlus dashboardPagePlus
+#' @importFROM stringr str_glue
+#' @importFROM waiter spin_plus use_waiter
+#' @importFROM shinyjs hidden useShinyjs
+#'
+#' @return
+#' "This function returns \code{two possible UI}:"
+#' \itemize{
+#'   \item If header & sidebar & body & rightsidebar are *NULL* then return a created UI
+#'   \item If header & sidebar & body & rightsidebar are not *NULL* then return a *dashboardPagePlus*
+#' }
+#'
+#' @export
+#'
+#' @note Use this function at the same time with the function *loginOutput*.
+#'
+#' @example
+#' \dontrun{
+#' ui <- loginUI(id = "hello",
+#'               image_href = "www.image_reference.com",
+#'               title = "Welcome Back!",
+#'               error_message = "Wrong Password!",
+#'               company_name = "Company")
+#' }
+loginUI <- function(id, image_href, title,
+                    error_message, company_name,
+                    header = NULL,  sidebar = NULL,
+                    body = NULL, rightsidebar = NULL){
+
+  # 0.0 Export the waiter
+  waiting_screen <<- tagList(
+    div(
+      tags$img(
+        src = image_href,
+        height = 100),
+      h4(strong(str_glue("{company_name} loading ...")),
+         style = "color:black; font-family:-webkit-pictograph;"),
+      br(),
+      spin_plus(), #type of spinner
+    )
+  )
+
+  # 1.0 LOG-IN PAGE
+  login_page <- list(
+
+    # 1.1 TITLE BAR
+    div(
+      title_bar(image_href = image_href,
+                title = company_name)
+    ) %>% hidden(),
+
+    # 1.2 LOG-IN BOX
+    fluidPage(
+      use_waiter(),
+      useShinyjs(),
+
+      div(
+        id = NS(id, "login-panel"),
+        style = "width:500px; max-width:100%; padding:20px; margin:auto;",
+
+        wellPanel(
+
+          style = "background-color:#2e856e33;",
+
+          # 1.2.1 PRESENTATION
+          div(
+            img(class = "img-circle img-responsive",
+                src = image_href,
+                style = "width:150px; margin:auto;"),
+
+            h2(strong(title),
+               class = "text-center",
+               style = "font-family:-webkit-pictograph; color:black;")
+          ),
+
+          br(),
+
+          # 1.2.2 USER AND PASSWORD
+          div(
+            tags$style(type = "text/css",
+                       ".control-label {font-family:-webkit-pictograph;
+                                      color:black;}"),
+            tags$style(type = "text/css",
+                       "#user_name, #password {font-family:-webkit-pictograph}"),
+
+            textInput(inputId = NS(id, "user_name"),
+                      label = tagList(icon("user"), "User Name"),
+                      placeholder = "Enter user name."),
+
+            passwordInput(inputId = NS(id, "password"),
+                          label = tagList(icon("unlock-alt"), "Password"),
+                          placeholder = "Enter password.")
+          ),
+
+          # 1.2.3 LOG-IN BUTTON
+          div(
+            class = "text-center",
+            actionButton(inputId = NS(id, "login_button"),
+                         label = strong("Log in"),
+                         class = "btn btn-lg",
+                         style = "background-color:#2e6da4;
+                                font-family:-webkit-pictograph;")
+          ),
+
+          # 1.2.4 LOG-IN ERROR
+          div(
+            id = NS(id, "error"),
+            style =  "font-family:-webkit-pictograph; color:red;",
+            p(strong(error_message),
+              class = "text-center")
+          ) %>% hidden(),
+
+          br(),
+
+          #1.2.5 REFERENCE BUTTON
+          div(
+            class = "text-left",
+            style =  "font-family:-webkit-pictograph; color:black;",
+            str_glue("New to {company_name}?"),
+            actionButton(inputId = NS(id, "new_user"),
+                         label = strong("Sign up."),
+                         style = "background-color:transparent;
+                                border-color: transparent;
+                                padding:initial;
+                                color:black;
+                                font-family:-webkit-pictograph;")
+          )
+        )))
+  )
+
+  # 2.0 WEB PAGE
+  if(is.null(header) & is.null(sidebar) &
+     is.null(body) & is.null(rightsidebar)){
+    #2.1 UI RESULT
+    result <- login_page %>% append(
+      list(
+        div(
+          id = NS(id, "display_content"),
+          UIelement(id = id, outputID = "display_content_result")
+        ) %>% hidden()
+      )) %>% do.call(what = tagList, args = .)
+
+  }else{
+    # 2.2 DASHBORDPLUS
+    result <- login_page %>% append(
+      list(
+        div(
+          id = NS(id, "display_content"),
+          dashboardPagePlus(header = header,
+                            sidebar = sidebar,
+                            body = body,
+                            rightsidebar = rightsidebar)
+        ) %>% hidden()
+      )) %>% do.call(what = tagList, args = .)
+  }
+  result
+}
+
+#' loginOutput
+#'
+#' Server part of the *loginUI* function
+#'
+#' This function allows you to make the server work of the *loginUI* function
+#'
+#' @param id module id
+#' @param user_base dataset that contain the users and the passwords to log-in
+#' @param username variable of the \code{user_base} dataset that represent the users
+#' @param password variable of the \code{user_base} dataset that represent the passwords
+#' @param waiter created waiter to use for the load part
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM shinyjs toggleState toggle delay hide
+#' @importFROM dplyr pull
+#' @importFROM sodium password_store
+#' @importFROM waiter waiter_show waiter_hide
+#'
+#' @return return the server side of the function *loginUI*
+#'
+#' @export
+#'
+#' @note Use this function at the same time with the function *loginUI*.
+#'
+#' @example
+#' ui <- loginUI(id = "hello",
+#'               image_href = "www.image_reference.com",
+#'               title = "Welcome Back!",
+#'               error_message = "Wrong Password!",
+#'               company_name = "Company")
+#'
+#' exampleOutput <- function(id){
+#'  moduleServer(id, function(input, output, session){
+#'   output$display_content_result <- renderUI({
+#'    div(
+#'      class = "well",
+#'      id = "success",
+#'      h1(class = "page-header", "Be happy", tags$small("by Eduardo Trujillo")),
+#'      p(class = "lead", "Page content...")
+#'     )
+#'   })
+#'  })
+#' }
+#'
+#' user_base_tbl <- data.table(user = c("user1", "user2"),
+#'                             password = c("pass1", "pass2"))
+#'
+#' server <- function(input, output) {
+#'   credentials <- loginOutput(id = "hello",
+#'                              user_base = user_base_tbl,
+#'                              username = "user",
+#'                              password = "password")
+#'
+#'
+#'   exampleOutput(id = "hello")
+#' }
+#'
+#' shinyApp(ui = ui, server = server)
+#'
+loginOutput <- function(id, user_base, username, password, waiter = waiting_screen){
+  moduleServer(id, function(input, output, session){
+
+    # 1.0 onclick login button
+    observe({
+      toggleState(id = "login_button", condition = {
+        (input$user_name != "") && (input$password != "")
+      })
+    })
+
+    # 2.0 validate user & password
+    credentials <- reactiveValues()
+
+    validate_pwd <- eventReactive(input$login_button,{
+
+      validate <- FALSE
+
+      # 2.1 user base for the access to the application
+      user_base <- user_base[get(username) == input$user_name]
+
+      # 2.2 validate correct user and password
+      # (pull allows to convert the datatable to character eg. user:user1 -> "user1")
+      if(user_base[,.N] != 0){
+        credentials$username <- pull(user_base[,..username],1)
+
+        credentials$password <- sapply(pull(user_base[,..password], 1),
+                                       password_store)
+
+        if(input$user_name == credentials$username &&
+           input$password == names(credentials$password)){
+          validate <- TRUE
+        }
+      }
+
+      # 2.3 message of incorrect user & password
+      if(!validate){
+        toggle(id = "error", anim = TRUE, time = 1, animType = "fade")
+        delay(2000,
+              toggle(id = "error", anim = TRUE, time = 1, animType = "fade"))
+      }
+
+      # 2.4 Hide log-in page
+      if(validate) hide(id = "login-panel")
+
+      validate
+    })
+
+    # 3.0 display Web Page
+    observeEvent(validate_pwd(),{
+
+      req(validate_pwd())
+
+      waiter_show(html = waiter, color = "#2e856e33")
+      Sys.sleep(2)
+      waiter_hide()
+
+      toggle(id = "display_content", anim = TRUE, animType = "fade")
+    })
+
+    reactive({
+      reactiveValuesToList(credentials)
+    }) %>% return()
   })
 }

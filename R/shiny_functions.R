@@ -997,3 +997,113 @@ loginOutput <- function(id, user_base, username, password, waiter = waiting_scre
     }) %>% return()
   })
 }
+
+# DYNAMIC SIDEBAR ---------------------------------------------------------
+
+#' dynamic_menuItem
+#'
+#' Create interactively the sidebar of a dashboard
+#'
+#' This function allows you to create an interactive personalized tabNames and subtabnames of a dashboardPage
+#'
+#' @param menu_text Show text of of the tab
+#' @param menu_tabName id of the tab
+#' @param menu_icon icon of the tab
+#' @param menu_icon_class class of the icon of the tab
+#' @param submenu_text show text of the subtabs of a tab
+#' @param submenu_tabName id of the subtabs of a tab
+#' @param subitem \code{yes} if there is subtabs or \code{no} if there is no subtabs
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM purrr pmap map2
+#' @importFROM shinydashboard menuItem menuSubItem
+#' @importFROM stringr str_glue
+#'
+#' @return
+#' "This function returns \code{two possible tabs}:"
+#' \itemize{
+#'   \item If \code{subitem} is \code{yes} then it means that we can create a tab with subtabs
+#'   \item If \code{subitem} is \code{no} then it means that a tab doesn´t have subtabs
+#' }
+#'
+#' @export
+#'
+#' @note The advantage of this function is that we can create multiple tabs (thanks to the iteratior) only using this function.
+#'
+#' @example
+#' \dontrun{
+#' *No subtabs*
+#'dynamic_menuItem(menu_text = c("Presentation", "Raw Data"),
+#'                 menu_tabName = c("presentation", "rawdata"),
+#'                 menu_icon = c("vector-square", "table"),
+#'                 menu_icon_class = rep("fas", 2),
+#'                 subitem = "no")
+#'*Subtabs*
+#'#'dynamic_menuItem(menu_text = c("General Inforamation","Statistical Distributions"),
+#'                   menu_icon = c("calculator","chart-bar"),
+#'                   menu_icon_class = rep("fas", 2),
+#'                   submenu_text = list(c("General reports", "Descriptive Statistics", "Add"),
+#'                                       c("Discrete Random Variable", "Continous Random Variable")),
+#'                   submenu_tabName = list(c("GR", "DS", "a"),
+#'                                          c("SDiscrete", "SDcontinous")),
+#'                   subitem = "yes")
+#' }
+#'
+dynamic_menuItem <- function(menu_text = NULL,
+                             menu_tabName = NULL,
+                             menu_icon = NULL,
+                             menu_icon_class = NULL,
+                             submenu_text = NULL,
+                             submenu_tabName = NULL,
+                             subitem = c("yes", "no")){
+
+  if(subitem == "no"){
+    result <- pmap(list(menu_text, menu_tabName, menu_icon, menu_icon_class), ~
+                     do.call(
+                       what = function(menu_text, menu_tabName,
+                                       menu_icon, menu_icon_class){
+                         menuItem(
+                           text = menu_text,
+                           tabName = menu_tabName,
+                           icon = icon(name = menu_icon,
+                                       class = str_glue("{menu_icon_class} fa-{menu_icon}"),
+                                       lib = "font-awesome")
+                         )},
+                       args = list(menu_text = ..1,
+                                   menu_tabName = ..2,
+                                   menu_icon = ..3,
+                                   menu_icon_class = ..4)
+                     ))
+
+  }else if(subitem == "yes"){
+    result <- pmap(list(menu_text, menu_icon, menu_icon_class,
+                        submenu_text, submenu_tabName),
+                   ~menuItem(
+                     text = ..1,
+                     icon = icon(name = ..2,
+                                 class = str_glue("{..3} fa-{..2}"),
+                                 lib = "font-awesome"),
+
+                     map2(..4, ..5, ~
+
+                            do.call(
+                              what = function(submenu_text, submenu_tabName){
+                                menuSubItem(
+                                  text = submenu_text,
+                                  tabName = submenu_tabName,
+                                  icon = icon(name = "angle-right",
+                                              class = "fas fa-angle-right",
+                                              lib = "font-awesome")
+                                )},
+                              args = list(submenu_text = .x,
+                                          submenu_tabName = .y)
+                            ))
+                   )
+    ) %>% do.call(what = tagList, args = .)
+  }
+  result
+}
+
+

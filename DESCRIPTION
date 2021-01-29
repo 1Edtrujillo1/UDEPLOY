@@ -24,4 +24,5 @@ Imports:
     waiter,
     dplyr,
     sodium,
-    data.table
+    data.table,
+    shinydashboard

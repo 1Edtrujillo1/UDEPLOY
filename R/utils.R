@@ -10,7 +10,7 @@
 #'
 #' @author Eduardo Trujillo
 #'
-#' @import purrr
+#' @importFROM purrr map pluck
 #'
 #' @return Using \code{no_sublists} and \code{element_sublists} list, which each sublist contains the same element
 #' @export

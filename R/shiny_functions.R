@@ -205,7 +205,7 @@ rightInputs_Navbar <- function(..., inputs){
 #'
 #' @author Eduardo Trujillo
 #'
-#' @import purrr
+#' @importFROM purrr map2
 #' @import shiny
 #'
 #' @return return a navbarMenu with tabs where you can use for create UI elements
@@ -376,7 +376,7 @@ intermediate_bar <- function(image_href, size_text, text){
 #'
 #' @import shiny
 #' @import stringr
-#' @import purrr
+#' @importFROM purrr map
 #'
 #' @return return a personalized jumbotron with referenced text and a bar with 3 icons information.
 #' @export
@@ -459,7 +459,7 @@ intermediate_bar_icon <- function(title, title_text,
 #'
 #' @import shiny
 #' @import stringr
-#' @import purrr
+#' @importFROM purrr pmap pluck
 #'
 #' @return return the end of the web page as a jumbotron
 #' @export
@@ -886,6 +886,7 @@ loginUI <- function(id, image_href, title,
 #' @author Eduardo Trujillo
 #'
 #' @import shiny
+#' @import data.table
 #' @importFROM shinyjs toggleState toggle delay hide
 #' @importFROM dplyr pull
 #' @importFROM sodium password_store

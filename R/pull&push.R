@@ -56,3 +56,33 @@ mongo_Listread_or_write <- function(collection = config$collection,
   }
   mongo_connection$disconnect()
 }
+
+# MERGES ------------------------------------------------------------------
+
+#' iterative_merge
+#'
+#' Merge a list of datasets
+#'
+#' This function allows you to make any type of merge of different datasets withing a list.
+#'
+#' @param dfs_list list of datasets
+#' @param key join ID
+#' @param ... additional parameters of merge
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#'
+#' @return This function returns a merged dataset of all the datasets from \code{dfs_list}
+#'
+#' @export
+#'
+#' @example
+#'iterative_merge(dfs_list = list(data.table(a=rep(1:2,each=3), b=1:6, key="a,b"),
+#'                                data.table(a=0:1, bb=10:11, key="a")),
+#'                 key = "a")
+#'
+iterative_merge <- function(dfs_list, key, ...){
+  Reduce(function(x,y) merge(x, y, by = key, ...),
+         x = dfs_list)
+}

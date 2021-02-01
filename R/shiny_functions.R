@@ -1106,4 +1106,89 @@ dynamic_menuItem <- function(menu_text = NULL,
   result
 }
 
+# DYNAMIC HEADER ----------------------------------------------------------
 
+#' NotificationmenuInput
+#'
+#' Create a UI-Message component
+#'
+#' This function allows you to create a UI-message component inside a shiny module
+#'
+#' @param id module id
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#'
+#' @return UI-message component
+#' @export
+#'
+#' @note Use this function with function *NotificationmenuOutput*.
+#'
+#' @example
+#' \dontrun{
+#' NotificationmenuInput(id = "notifications")
+#' }
+#'
+NotificationmenuInput <- function(id){
+  dropdownMenuOutput(outputId = NS(id, "notificationMenu"))
+}
+
+
+#' NotificationmenuInput
+#'
+#' Create server side of the UI-message
+#'
+#' This function allows you to make work the UI-message component inside a shiny module
+#'
+#' @param id module id
+#' @param message list of message we want to share
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @import data.table
+#' @importFROM purrr pluck
+#'
+#' @return UI-message component
+#' @export
+#'
+#' @note Use this function with function *NotificationmenuInput*.
+#' @note
+#' "This message list needs to have the variables:"
+#' \itemize{
+#'   \item \code{text} refers to the messages we want to share
+#'   \item \code{status} color of the messages ("warning", "success", "info", etc.)
+#'   \item \code{Href} references link
+#'   \item \code{icon} icon of the message
+#' }
+#'
+#' @example
+#' \dontrun{
+#' NotificationmenuOutput(id = "notifications",
+#'                        message = list(text = c("Done", "kk"),
+#'                        status = c("success","info"),
+#'                        Href = c("https://reference1.com",
+#'                                 "https://reference2.com"),
+#'                        icon = rep("info", 2)))
+#' }
+#'
+NotificationmenuOutput <- function(id, message){
+  moduleServer(id, function(input, output, session){
+    output$notificationMenu <- renderMenu({
+
+      df_messages <- message() %>% pluck(1) %>% set_names(toupper(names(.))) %>%
+        .[,TEXT:=toupper(TEXT)]
+
+      # Create a Dynamic notifications for the header
+      ntfcation <- apply(df_messages, 1,
+                         function(row){
+                           notificationItem(text = row[["TEXT"]],
+                                            href = row[["HREF"]],
+                                            status = row[["STATUS"]],
+                                            icon = icon(name = row[["ICON"]]))
+                         })
+      dropdownMenu(type = "notifications", .list = ntfcation)
+    })
+  })
+}

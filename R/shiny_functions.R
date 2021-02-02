@@ -1248,6 +1248,148 @@ NotificationmenuOutput <- function(id, message){
 
 # SING UP (PASSWORD) ------------------------------------------------------
 
+#' passUI
+#'
+#' Create a dynamic password visualization
+#'
+#' This function allows you to visualize the string password and its confirmation based on a click
+#'
+#' @param id module id
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM purrr map2 pmap
+#' @importFROM shinyjs hidden
+#' @importFROM stringr str_c
+#'
+#' @return passwords and its confirmation password and a click button to show what we are writting on them.
+#' @export
+#'
+#' @note Use this function at the same time with the function *passOutput*.
+#'
+#' @example
+#' \dontrun{
+#' passUI(id = "hello")
+#' }
+#'
+passUI <- function(id){
+
+  div(
+    map2(list(list(c("hide_pass", "confirm_hide_pass"),
+                   c("password", "confirm_password"),
+                   c("Password", "Confirmation")),
+              list(c("hide_text", "confirm_hide_text"),
+                   c("password_text", "confirm_password_text"),
+                   c("Password", "Confirmation"))),
+         list(passwordInput, textInput),
+
+         ~ div(
+           pmap(.x,
+                ~ div(id = NS(id, ..1),
+                      style="display: inline-block;vertical-align:top; width: 250px;
+                           font-family:'Raleway';",
+                      .y(inputId = NS(id, ..2),
+                         label = NULL,
+                         placeholder = ..3)
+                ) %>% hidden()
+           )
+         )
+    ),
+
+    p(style = "font-family:'Raleway';",
+      "Use 8 or more characters with a combination of letters, numbers and symbols."),
+
+    div(
+      tags$style(type = "text/css",
+                 str_c("#",id, "-check_password {transform:scale(1.5);}")),
+
+      style = "font-family:'Raleway'; font-size:larger;",
+      checkboxInput(inputId = NS(id, "check_password"),
+                    label = "Show password",
+                    value = FALSE)
+    )
+  )
+}
+
+#' passOutput
+#'
+#' Server part of the *passUI* function
+#'
+#' This function allows you to make the server work of the *passUI* function
+#'
+#' @param id module id
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM purrr map2 pmap map
+#' @importFROM shinyjs toggle hide
+#'
+#' @return return the server side of the function *passUI*
+#' @export
+#'
+#' @note
+#' \itemize{
+#'   \item Use this function at the same time with the function *passUI*.
+#'   \item his function returns the password and the confirmation if we need it later (as a reactive list).
+#' }
+#'
+#' @example
+#' ui <- fluidPage(
+#'  useShinyjs(),
+#'
+#'  passUI(id = "hello")
+#' )
+#' server <- function(input, output){
+#'  passOutput(id = "hello")
+#'  }
+#'
+#'shinyApp(ui = ui, server = server)
+#'
+passOutput <- function(id){
+  moduleServer(id, function(input, output, session){
+
+    string_password <- reactiveValues()
+
+    observe({
+      string_password$store <- input$password
+      string_password$store_confirmation <- input$confirm_password
+
+      map2(c("password_text", "confirm_password_text"),
+           c(string_password$store, string_password$store_confirmation),
+           ~ updateTextInput(session = session,
+                             inputId = ..1,
+                             value = ..2))
+    })
+
+    observe({
+      if(!input$check_password){
+
+        pmap(list(c("hide_pass", "confirm_hide_pass"),
+                  rep(TRUE, 2),
+                  rep("slide", 2)),
+             ~ toggle(id = ..1, anim = ..2, animType = ..3))
+
+        map(c("hide_text", "confirm_hide_text"), hide)
+
+      }else if(input$check_password){
+
+        map(c("hide_pass", "confirm_hide_pass"), hide)
+
+        pmap(list(c("hide_text", "confirm_hide_text"),
+                  rep(TRUE, 2),
+                  rep("slide", 2)),
+             ~ toggle(id = ..1, anim = ..2, animType = ..3))
+      }
+    })
+
+    reactive({
+      reactiveValuesToList(string_password)
+    }) %>% return()
+  })
+}
+
 # SIGN UP (PAGE) ----------------------------------------------------------
 
 

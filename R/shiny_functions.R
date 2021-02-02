@@ -157,6 +157,57 @@ UIelement <- function(id, outputID){
   uiOutput(NS(id, outputID))
 }
 
+#' message_reactive
+#'
+#' Create an interactive box message
+#'
+#' This function allows you to create an interactive personalized success or fail message
+#'
+#' @param id module id
+#' @param text string to show for success or fail
+#' @param type type of box message
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @import shinyWidgets
+#'
+#' @return
+#' "This function returns \code{two possible box messages}:"
+#' \itemize{
+#'   \item If \code{type} is \code{success} then returns success box message
+#'   \item If \code{type} is \code{fail} then returns fail box message
+#' }
+#'
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' message_reactive (id = id,
+#'                   text = "We will check your information and notify you back.",
+#'                   type = "success")
+#' }
+#'
+message_reactive <- function(id, text, type = c("success", "fail")){
+  moduleServer(id, function(input, output, session){
+
+    if(type == "success"){
+      sendSweetAlert(
+        session = session,
+        title = "Success !!",
+        text = p(text, style = "font-family:'Raleway';"),
+        type = "success")
+
+    }else if(type == "fail"){
+      sendSweetAlert(
+        session = session,
+        title = "Error",
+        text = p(text, style = "font-family:'Raleway';"),
+        type = "error")
+    }
+  })
+}
+
 # NAVBAR ------------------------------------------------------------------
 
 #' rightInputs_Navbar
@@ -1192,3 +1243,12 @@ NotificationmenuOutput <- function(id, message){
     })
   })
 }
+
+# SIGN UP -----------------------------------------------------------------
+
+# SING UP (PASSWORD) ------------------------------------------------------
+
+# SIGN UP (PAGE) ----------------------------------------------------------
+
+
+

@@ -25,4 +25,5 @@ Imports:
     dplyr,
     sodium,
     data.table,
-    shinydashboard
+    shinydashboard,
+    shinyWidgets

@@ -1392,5 +1392,234 @@ passOutput <- function(id){
 
 # SIGN UP (PAGE) ----------------------------------------------------------
 
+#' sign_upUI
+#'
+#' Create an personalized sign up web page
+#'
+#' This function allows you to create an interactive personalized sign up webpage
+#'
+#' @param id module id
+#' @param image_href url-link of an image of your company
+#' @param title your company name as string
+#' @param services list of services your company offer.
+#' @param login_href url-link reference to go to another page (the log-in web page)
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM shinyjs useShinyjs hidden
+#' @importFROM shinythemes shinytheme
+#' @importFROM stringr str_glue
+#' @importFROM purrr map2
+#'
+#' @return UI webpage of the sign up.
+#' @export
+#'
+#' @note Use this function at the same time with the function *sign_upOutput*.
+#'
+#' @example
+#' \dontrun{
+#' ui <- sign_upUI(id = "password",
+#'                 image_href = "www.image_reference.com",
+#'                 title = "example",
+#'                 services = list("Service 1" = "id1",
+#'                                 "Service 2" = "id2",
+#'                                 "Service 3" = "id3"),
+#'                 login_href = "#")
+#' }
+#'
+sign_upUI <- function(id, image_href, title, services, login_href){
 
+  fluidPage(
 
+    useShinyjs(),
+
+    theme = shinytheme("readable"),
+
+    title_bar(image_href = image_href,
+              title = title),
+
+    div(
+      class = "container",
+      style = "width:1100px; padding:20px; margin:auto;",
+      wellPanel(
+        style = "background-color:transparent;",
+
+        # 1.0 Presentation
+        div(
+          class = "text-left",
+          img(class = "img-circle img-responsive pull-left",
+              src = image_href,
+              style = "width:100px; margin:auto;"),
+          br(), br(),br(),br(),br(),
+          h3(str_glue("Create your {title} account"))
+        ),
+        br(),
+        fluidRow(
+          # Left-Side
+          column(
+            width = 7,
+
+            # 2.0 Name
+            div(
+              map2(c("first_name", "second_name"),
+                   c("Name", "Last name"),
+                   ~ div(style="display: inline-block;vertical-align:top; width: 250px;
+                           font-family:'Raleway';",
+                         textInput(inputId = NS(id, ..1),
+                                   label = NULL,
+                                   placeholder = ..2))
+              )
+            ),
+            br(),
+            # 3.0 Mail
+            div(style="width: 500px;font-family:'Raleway';",
+                textInput(inputId = NS(id, "mail"), label = NULL, placeholder = "Mail")),
+            br(),
+            # 4.0 Password
+            passUI(id = id),
+            br(),
+            # 5.0 Services
+            div(
+              style = "font-family:'Raleway';",
+              h4("Choose your desire services."),
+              hr(),
+              checkboxGroupInput(inputId = NS(id, "services"),
+                                 label = NULL,
+                                 choices = services)
+            ),
+            br(), br(),
+            # 6.0 Buttons
+            div(
+              style = "font-family:'Raleway';",
+              a(strong("Access your account instead"),
+                href = login_href),
+              div(class = "pull-right",
+                  actionButton(inputId = NS(id, "sign_up"),
+                               label = "Sign Up",
+                               class = "btn btn-primary btn-lg")
+              )
+            ),
+            br(), br(), br(),
+            div(
+              id = NS(id, "error"),
+              style = "font-family:'Raleway'; color:red;",
+              p(strong("Passwords need to match!"),
+                class = "text-center")
+            ) %>% hidden()
+          ),
+
+          # Right-Side
+          column(
+            width = 5,
+            div(
+              class = "text-center hidden-md hidden-sm hidden-xs",
+              style = "font-family:'Raleway'; font-size:xx-large;",
+
+              tags$style(type = "text/css",
+                         ".fa-laptop-house:before {color:#2e856e;}"),
+
+              icon(name = "laptop-house",
+                   class = "fas fa-laptop-house fa-10x"),
+              br(), br(),
+              p("One account. Multiple services at your disposal.")
+            ))
+        )
+      ))
+  )
+}
+
+#' sign_upOutput
+#'
+#' Server part of the *sign_upUI* function
+#'
+#' This function allows you to make the server work of the *sign_upUI* function
+#'
+#' @param id module id
+#' @param pass reactive password obtained from the function \code{passOutput}
+#' @param confirm_pass reactive confirmation password obtained from the function \code{passOutput}
+#' @param config \code{YAML} file indicate the mongodb database where we are going to push the new users
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @import data.table
+#' @importFROM shinyjs toggleState toggle delay
+#'
+#' @return return the server side of the function *sign_upUI*
+#' @export
+#'
+#' @note
+#' \itemize{
+#'   \item Use this function at the same time with the function *sign_upUI*.
+#'   \item The output of this function is a data.table that is going to push the recollected information to a MongoDB. So you need to have a collection.
+#' }
+#'
+#' @example
+#' ui <- sign_upUI(id = "password",
+#'                 image_href = "www.image_reference.com",
+#'                 title = "example",
+#'                 services = list("Service 1" = "id1",
+#'                                 "Service 2" = "id2",
+#'                                 "Service 3" = "id3"),
+#'                 login_href = "#")
+#'
+#' server <- function(input, output){
+#'
+#'    string_password <- udeploy::passOutput(id = "password")
+#'    sign_upOutput(id = "password",
+#'                  pass = reactive(string_password()$store),
+#'                  confirm_pass = reactive(string_password()$store_confirmation),
+#'                  config = config)
+#'
+#' }
+#'
+#' shinyApp(ui = ui, server = server)
+#'
+sign_upOutput <- function(id, pass, confirm_pass, config){
+  moduleServer(id, function(input, output, session){
+
+    # 1.0 onclick sign up button
+    observe({
+      toggleState(id = "sign_up", condition = {
+        (input$first_name != "") && (input$second_name != "") &&
+          (input$mail != "")  && (pass() != "") &&
+          (input$services != "")
+      })
+    })
+    # 2.0 Validate Password and create new users
+    validate_pwd <- eventReactive(pass(),{
+
+      if(pass() == confirm_pass()){
+
+        message_reactive(id = id,
+                         text = "We will check your information and notify you back.",
+                         type = "success")
+
+        new_user <- data.table(
+          name = paste(input$first_name, input$second_name),
+          user = input$first_name,
+          mail = input$mail,
+          password = pass(),
+          tabnames = list(input$services))
+
+        mongo_manipulation(collection = config$collection,
+                           database = config$database,
+                           host = config$host,
+                           username = config$username,
+                           password = config$password,
+                           mongo_choice = "push",
+                           push_record = new_user)
+      }else{
+        toggle(id = "error", anim = TRUE, time = 1, animType = "fade")
+        delay(2000,
+              toggle(id = "error", anim = TRUE, time = 1, animType = "fade"))
+
+      }
+    })
+    # 3.0 Create new user information
+    observeEvent(input$sign_up,{
+      validate_pwd()
+    })
+  })
+}

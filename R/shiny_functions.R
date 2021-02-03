@@ -756,6 +756,7 @@ interactive_panelOutput <- function(id, outputID, ID_shinyJS){
 #' @param title string of text to show in the title header
 #' @param error_message message string to show when your password is incorrect
 #' @param company_name name of your company to show in the footer sign up and in the load part
+#' @param href_new_user reference link in case of not log-in (sign up link)
 #' @param header header of the dashboardPagePlus
 #' @param sidebar sidebar of the dashboardPagePlus
 #' @param body body of the dashboardPagePlus
@@ -786,10 +787,11 @@ interactive_panelOutput <- function(id, outputID, ID_shinyJS){
 #'               image_href = "www.image_reference.com",
 #'               title = "Welcome Back!",
 #'               error_message = "Wrong Password!",
-#'               company_name = "Company")
+#'               company_name = "Company",
+#'               href_new_user = "#")
 #' }
 loginUI <- function(id, image_href, title,
-                    error_message, company_name,
+                    error_message, company_name, href_new_user,
                     header = NULL,  sidebar = NULL,
                     body = NULL, rightsidebar = NULL){
 
@@ -883,13 +885,13 @@ loginUI <- function(id, image_href, title,
             class = "text-left",
             style =  "font-family:-webkit-pictograph; color:black;",
             str_glue("New to {company_name}?"),
-            actionButton(inputId = NS(id, "new_user"),
-                         label = strong("Sign up."),
-                         style = "background-color:transparent;
-                                border-color: transparent;
-                                padding:initial;
-                                color:black;
-                                font-family:-webkit-pictograph;")
+            a(strong("Sign up."),
+              href = href_new_user,
+              style = "background-color:transparent;
+                       border-color: transparent;
+                       padding:initial;
+                       color:black;
+                       font-family:-webkit-pictograph;")
           )
         )))
   )
@@ -954,7 +956,8 @@ loginUI <- function(id, image_href, title,
 #'               image_href = "www.image_reference.com",
 #'               title = "Welcome Back!",
 #'               error_message = "Wrong Password!",
-#'               company_name = "Company")
+#'               company_name = "Company",
+#'               href_new_user = "#")
 #'
 #' exampleOutput <- function(id){
 #'  moduleServer(id, function(input, output, session){

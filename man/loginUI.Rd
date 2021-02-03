@@ -10,6 +10,7 @@ loginUI(
   title,
   error_message,
   company_name,
+  href_new_user,
   header = NULL,
   sidebar = NULL,
   body = NULL,
@@ -26,6 +27,8 @@ loginUI(
 \item{error_message}{message string to show when your password is incorrect}
 
 \item{company_name}{name of your company to show in the footer sign up and in the load part}
+
+\item{href_new_user}{reference link in case of not log-in (sign up link)}
 
 \item{header}{header of the dashboardPagePlus}
 

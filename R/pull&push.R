@@ -37,7 +37,12 @@
 #'
 #' @export
 #'
-#' @note You can use this function inside your shiny app.
+#' @note
+#'\itemize{
+#'   \item You can use this function inside your shiny app.
+#'   \item If \code{mongo_choice = "pull"} then the variable \code{pull_info} is going to be saved in your global environment with the pull information. So is not necessary to assign this function.
+#' }
+#'
 #'
 #' @example
 #' \dontrun{
@@ -131,6 +136,76 @@ mongo_manipulation <- function(collection = config$collection,
   }
 
   mongo_connection$disconnect()
+}
+
+
+#' pull_from_environment
+#'
+#' particular pull data
+#'
+#' This function allows you to pull a database similar with the function *mongo_manipulation*
+#'
+#' @param config_file config file that confain the database information
+#' @param id_filter variable of the dataset that we want to filter when we pull this.
+#' @param element_id_filter observation of \code{id_variable} that will allow to pull an specific table.
+#'
+#' @author Eduardo Trujillo
+#'
+#' @return
+#' "This function allows you to pull dataset without overwriting the previous pulled."
+#' \itemize{
+#'   \item If \code{mongo_choice = "pull"} is not necessary to use other variable, because you are going to pull the dataset from the config file.
+#'   \item If \code{mongo_choice = "pull"} and use the variables \code{id_filter} and \code{element_id_filter} to pull a table from the dataset.
+#' }
+#'
+#' @export
+#'
+#' @note
+#'\itemize{
+#'   \item You can use this function inside your shiny app.
+#'   \item Since the function  *mongo_manipulation* pull a variable \code{pull_info} in the global environment, and if we want to pull from different *cofig* files. Then use this functions to not overwrite the variable \code{pull_info}, since now is written in son environment.
+#' }
+#'
+#' @example
+#' \dontrun{
+#' Sys.setenv(R_CONFIG_ACTIVE_0 = "default")
+#' Sys.setenv(R_CONFIG_ACTIVE_1 = "USERS")
+#' config1 <- config::get(file = "config.yml", config = Sys.getenv("R_CONFIG_ACTIVE_1"))
+#' config2 <- config::get(file = "config.yml", config = Sys.getenv("R_CONFIG_ACTIVE_2"))
+#'
+#' *1. Pull dataset*
+#' pull_from_environment(config_file = "config1")
+#'
+#' *2. Pull table from dataset*
+#' pull_from_environment(config_file = "config2",
+#'                    id_filter = "user",
+#'                    element_id_filter = "user1")
+#' }
+#'
+pull_from_environment <- function(config_file,
+                                  id_filter = NULL, element_id_filter = NULL){
+
+  mongo_manipulation(mongo_choice = "pull",
+                     collection = config_file$collection,
+                     database = config_file$database,
+                     host = config_file$host,
+                     username = config_file$username,
+                     password = config_file$password,
+                     id_filter = id_filter,
+                     element_id_filter = element_id_filter)
+
+  # 1.0 Create new environment.
+  NEW_environment <- new.env()
+
+  # 2.0 Add element to the environment.
+  NEW_environment$NEW_element <- pull_info
+
+  # 3.0 Delete variable in the global environment.
+  rm(pull_info, envir = .GlobalEnv)
+
+  # 4.0 Extract value from the environment.
+  base::get("NEW_element", envir = NEW_environment) %>%
+    return()
 }
 
 # MERGES ------------------------------------------------------------------

@@ -1228,8 +1228,8 @@ NotificationmenuOutput <- function(id, message){
   moduleServer(id, function(input, output, session){
     output$notificationMenu <- renderMenu({
 
-      df_messages <- message() %>% pluck(1) %>% set_names(toupper(names(.))) %>%
-        .[,TEXT:=toupper(TEXT)]
+      df_messages <- message() %>% pluck(1) %>% set_names(toupper(names(.)))
+      df_messages[,TEXT:=toupper(TEXT)]
 
       # Create a Dynamic notifications for the header
       ntfcation <- apply(df_messages, 1,

@@ -58,7 +58,10 @@ Read or pull or modify data in a cluster database
 This function allows you to push, pull or modify a database
 }
 \note{
-You can use this function inside your shiny app.
+\itemize{
+\item You can use this function inside your shiny app.
+\item If \code{mongo_choice = "pull"} then the variable \code{pull_info} is going to be saved in your global environment with the pull information. So is not necessary to assign this function.
+}
 }
 \author{
 Eduardo Trujillo

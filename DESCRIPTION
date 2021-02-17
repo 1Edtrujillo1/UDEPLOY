@@ -27,4 +27,8 @@ Imports:
     data.table,
     shinydashboard,
     shinyWidgets,
-    shinythemes
+    shinythemes,
+    haven,
+    readxl,
+    lubridate,
+    tidyr

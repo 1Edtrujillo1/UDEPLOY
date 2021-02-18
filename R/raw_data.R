@@ -422,5 +422,5 @@ classes_vector <- function(data_type, df){
   vars <- map(names(df), ~df[,class(eval(parse(text = .x)))]) %>%
     set_names(names(df))
 
-  vars[vars == data_type] %>% names() %>% return()
+  vars[vars %in% data_type] %>% names() %>% return()
 }

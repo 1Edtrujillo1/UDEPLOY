@@ -109,7 +109,7 @@ obtain_regex <- function(pattern = NULL,
 #'
 #' @author Eduardo Trujillo
 #'
-#' @import utils
+#' @import data.table
 #' @importFROM haven read_sas
 #' @importFROM readxl read_excel
 #' @importFROM purrr map2 set_names flatten map safely pluck keep
@@ -146,7 +146,9 @@ read_data <- function(path, encoding = 'UTF-8',
                                      "\\.rds", "\\.xls", "\\.xlsx"),
                          return_regex = "ends_with_pattern")
 
-  functs <- list(read_sas, read.table, read.csv, readRDS,
+  functs <- list(read_sas,
+                 list_of_lists(no_sublists = 2, element_sublists = fread),
+                 readRDS,
                  list_of_lists(no_sublists = 2, element_sublists = read_excel)) %>%
     unlist() #for the list_of_lists
 
@@ -309,7 +311,8 @@ assign_data_type <- function(variable){
     table() %>% sort(decreasing = TRUE) #sort based on type most repeated
 
   check <- map(general_values_type[1:2], ~ any(names(values_type) == .x)) %>% #integer, numeric -> numeric
-    set_names(general_values_type[1:2]) %>% keep(~isTRUE(.x)) %>% names()
+    set_names(general_values_type[1:2]) %>% keep(~isTRUE(.x)) %>% names() %>%
+    ifelse(any(. == general_values_type[1]), general_values_type[1], .)
 
   if(length(check) != 0){values_type <- check}
   else{

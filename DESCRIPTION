@@ -31,5 +31,4 @@ Imports:
     haven,
     readxl,
     lubridate,
-    tidyr,
-    utils
+    tidyr

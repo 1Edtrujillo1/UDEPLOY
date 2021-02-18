@@ -312,11 +312,11 @@ assign_data_type <- function(variable){
 
   check <- map(general_values_type[1:2], ~ any(names(values_type) == .x)) %>% #integer, numeric -> numeric
     set_names(general_values_type[1:2]) %>% keep(~isTRUE(.x)) %>% names() %>%
-    ifelse(any(check == general_values_type[3]),
+    ifelse(any(. == general_values_type[3]),
            general_values_type[3],
-           ifelse(any(check == general_values_type[1]),
+           ifelse(any(. == general_values_type[1]),
                   general_values_type[1],
-                  check))
+                  .))
 
   if(!is.na(check)){values_type <- check}
   else{

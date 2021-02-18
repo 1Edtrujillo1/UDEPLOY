@@ -109,6 +109,7 @@ obtain_regex <- function(pattern = NULL,
 #'
 #' @author Eduardo Trujillo
 #'
+#' @import utils
 #' @importFROM haven read_sas
 #' @importFROM readxl read_excel
 #' @importFROM purrr map2 set_names flatten map safely pluck keep

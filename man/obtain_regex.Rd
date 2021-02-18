@@ -9,7 +9,7 @@ obtain_regex(
   return_regex = c("starts_with_pattern", "not_starts_with_pattern",
     "ends_with_pattern", "not_ends_with_pattern", "before_pattern", "after_pattern",
     "between_pattern", "contains_pattern", "not_contains_pattern", "extract_pattern",
-    "or", "special_chrs", "regex_dates")
+    "not_extract_pattern", "or", "special_chrs", "regex_dates")
 )
 }
 \arguments{

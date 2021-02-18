@@ -51,7 +51,8 @@ obtain_regex <- function(pattern = NULL,
                          return_regex = c("starts_with_pattern", "not_starts_with_pattern",
                                           "ends_with_pattern", "not_ends_with_pattern",
                                           "before_pattern", "after_pattern", "between_pattern",
-                                          "contains_pattern", "not_contains_pattern", "extract_pattern",
+                                          "contains_pattern", "not_contains_pattern",
+                                          "extract_pattern", "not_extract_pattern",
                                           "or", "special_chrs", "regex_dates")){
   list(
     starts_with_pattern = "^{pattern}.*",
@@ -64,6 +65,7 @@ obtain_regex <- function(pattern = NULL,
     contains_pattern = ".*{pattern}.*",
     not_contains_pattern = "^(?!.*{pattern}.*).*",
     extract_pattern = "[{pattern}.*]+",
+    not_extract_pattern = "(?!{pattern})",
     or = "(?:{str_c(pattern, collapse = '|')})"
   ) %>% map(str_glue, .envir = environment()) %>%
     append(
@@ -277,7 +279,7 @@ assign_data_type <- function(variable){
 
   pattern = map2(list(c("[A-Z]+",
                         "[a-z]+",
-                        str_glue("{obtain_regex(pattern = c('[.]','[-]','[/]'), return_regex = 'or')}[:punct:]+")), #every punctuation (including ") except . or - or /
+                        str_glue("{obtain_regex(pattern = '[.]|[-]', return_regex = 'not_extract_pattern')}[:punct:]+")), #every punctuation (including ") except . or -
                       "[0-9]+[.][0-9]+",
                       c(".+\\/.+\\/.+",
                         obtain_regex(return_regex = "regex_dates")),

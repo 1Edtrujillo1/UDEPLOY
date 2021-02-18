@@ -314,7 +314,7 @@ assign_data_type <- function(variable){
     set_names(general_values_type[1:2]) %>% keep(~isTRUE(.x)) %>% names() %>%
     ifelse(any(. == general_values_type[1]), general_values_type[1], .)
 
-  if(length(check) != 0){values_type <- check}
+  if(!is.na(check)){values_type <- check}
   else{
     if(any(duplicated(values_type))){values_type <- general_values_type[1]} #if any count of the table is equal with other datatype
     else{values_type <- values_type %>% head(1) %>% names()} #datatype most repeated for all its observations

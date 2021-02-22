@@ -14,8 +14,8 @@ delete_outliers(df, factor_vars = NULL)
 \value{
 "This function allows us to return original dataset without the outliers based on:"
 \itemize{
-\item if \code{col_select = NULL} we delete every outlier of the numeric and/or integer variable without carrying about the factor variables
-\item if \code{col_select} is not NULL then the delete of the outliers is by every level of each factor variable selected.
+\item if \code{factor_vars = NULL} we delete every outlier of the numeric and/or integer variable without carrying about the factor variables
+\item if \code{factor_vars} is not NULL then the delete of the outliers is by every level of each factor variable selected.
 }
 }
 \description{

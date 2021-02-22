@@ -504,8 +504,8 @@ firstvariables_df_datatype <- function(df,
 #'
 #' @return "This function allows us to return original dataset without the outliers based on:"
 #' \itemize{
-#'   \item if \code{col_select = NULL} we delete every outlier of the numeric and/or integer variable without carrying about the factor variables
-#'   \item if \code{col_select} is not NULL then the delete of the outliers is by every level of each factor variable selected.
+#'   \item if \code{factor_vars = NULL} we delete every outlier of the numeric and/or integer variable without carrying about the factor variables
+#'   \item if \code{factor_vars} is not NULL then the delete of the outliers is by every level of each factor variable selected.
 #' }
 #'
 #' @export
@@ -633,4 +633,84 @@ nas_before_after_outliers <- function(df, factor_vars = NULL){
   }) %>% set_names(num_variables) %>% discard(~dim(.x)[1] == 0)
 
   NAS_count
+}
+
+# KEY CREATION ------------------------------------------------------------
+
+#' key_creation
+#'
+#' Create a unique key ID variable
+#'
+#' This function allows you to add a unique key ID to the dataset based on the factor variables (or not)
+#'
+#' @param df dataset to add a unique ID variable
+#' @param factor_vars factor variables reference
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFROM lubridate today days day month year
+#' @importFROM purrr map pluck
+#' @importFROM stringr str_c
+#'
+#'
+#' @return "This function allows us to return original dataset with a new KEY variable based on:"
+#' \itemize{
+#'   \item If \code{factor_vars = NULL} bring a KEY variable as day_month_year_*sequence from 1 to the length of the dataset*
+#'   \item If \code{factor_vars} is not NULL bring a KEY variable as day_month_year_*concatenate the unique id for each level for each factor variable selected*
+#' }
+#'
+#' @export
+#'
+#' @note
+#' \itemize{
+#'   \item The intention of this function is that in the future we use this new variable as an ID for merges.
+#'   \item If the dataset has a *date variable* then use this variable as reference but if not is going to create a new date variable reference
+#'   \item today()+(1:length(vector)) is: sequence of days from today to the day that represent the last element of the vector
+#'   \item today()+(1:length(vector))*days(-1) is: days(-1) invert the order, sequence this is from the day that represent the first element of the vector to yesterday "today()-1"
+#'   \item sort(today()+(1:length(df1$ID_REGION))*days(-1)) is: sorted day from the lowest to the gratest
+#' }
+#'
+#' @example
+#' \dontrun{
+#' r <- key_creation(df = df, factor_vars = c("PCLASS","SEX","SIBSP"))
+#' r <- key_creation(df = df)
+#' }
+#'
+key_creation <- function(df, factor_vars = NULL){
+
+  factor_variables <- classes_vector(data_type = "factor", df = df)
+  factor_vars <- unique(factor_vars)
+
+  tryCatch({
+    if((all(factor_vars %in% factor_variables)) | (is.null(factor_vars))){
+
+      date_variable <- classes_vector(data_type = "Date", df = df)
+
+      if(length(date_variable) == 0){date_variable <- sort(today()+(1:df[,.N])*days(-1))}
+      else{date_variable <- df[,eval(parse(text = date_variable))]}
+
+      date_variable <- map(list(day, month, year), ~
+                             do.call(what = .x,
+                                     args = list(date_variable)
+                             )) %>%
+        append(list(sep = "_")) %>% do.call(what = str_c)
+
+      if(is.null(factor_vars)){
+        result <- list(date_variable, 1:df[,.N]) %>% append(list(sep = "_")) %>%
+          do.call(what = str_c)
+
+      }else{
+        result <- list(date_variable,
+
+                       map(factor_vars, ~match(pluck(df[,..factor_vars], .x),
+                                               unique(pluck(df[,..factor_vars], .x)))) %>%
+                         append(list(sep = "_")) %>% do.call(what = str_c)
+
+        ) %>% append(list(sep = "_")) %>% do.call(what = str_c)
+      }
+      result <- copy(df)[,KEY:=result]
+    }
+    result
+  }, error = function(e) message("At least one of the selected variables don´t have a factor datatype"))
 }

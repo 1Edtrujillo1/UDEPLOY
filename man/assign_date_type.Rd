@@ -10,8 +10,7 @@ assign_date_type(variable)
 \item{variable}{variable that we want to assign date datatype}
 }
 \value{
-This function allows us to assign the correct data type to a variable
-"This function allows us to assign date data type based on:"
+"This function allows us to assign date data type to a variable based on:"
 \itemize{
 \item if a variable is date then return the variable
 \item In other case return a date type date checking the possibilities (Permutation 3 to 3 of date functions)to return the date with the format ISO 8601 YYYY-MM-DD

@@ -355,8 +355,7 @@ assign_data_type <- function(variable){
 #' @importFROM stringr str_detect
 #'
 #'
-#' @return This function allows us to assign the correct data type to a variable
-#' "This function allows us to assign date data type based on:"
+#' @return "This function allows us to assign date data type to a variable based on:"
 #' \itemize{
 #'   \item if a variable is date then return the variable
 #'   \item In other case return a date type date checking the possibilities (Permutation 3 to 3 of date functions)to return the date with the format ISO 8601 YYYY-MM-DD
@@ -423,4 +422,155 @@ classes_vector <- function(data_type, df){
     set_names(names(df))
 
   vars[vars %in% data_type] %>% names() %>% return()
+}
+
+# OUTLIERS ----------------------------------------------------------------
+
+#' delete_outliers
+#'
+#' Delete outliers from numeric or integer variables of a dataset
+#'
+#' This function allows you to delete outliers from numeric or integer variables of a dataset based on the z-score in function of the factor variables (or not)
+#'
+#' @param df dataset to clean outliers
+#' @param factor_vars factor variables to delete outliers
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFROM purrr walk2
+#' @importFROM stringr str_c
+#'
+#'
+#' @return "This function allows us to return original dataset without the outliers based on:"
+#' \itemize{
+#'   \item if \code{col_select = NULL} we delete every outlier of the numeric and/or integer variable without carrying about the factor variables
+#'   \item if \code{col_select} is not NULL then the delete of the outliers is by every level of each factor variable selected.
+#' }
+#'
+#' @export
+#'
+#' @note The z-score indicates that when a observation has a z-score +-3 then is going to be a NA (to not affect the distribution of the variable)
+#'
+#' @example
+#' \dontrun{
+#' df2 <- delete_outliers(df = copy(df), factor_vars = c("PCLASS","SEX", "PCLASS"))
+#' df5 <- delete_outliers(df = copy(df))
+#' }
+#'
+delete_outliers <- function(df, factor_vars = NULL){
+
+  factor_variables <- classes_vector(data_type = "factor", df = df)
+  factor_vars <- unique(factor_vars)
+  tryCatch({
+    if((all(factor_vars %in% factor_variables)) | (is.null(factor_vars))){
+
+      num_variables <- classes_vector(data_type = c("integer", "numeric"), df = df)
+      no_sd <- str_c("no_sd", num_variables, sep = "_")
+
+      df <- df[,.SD, by = factor_vars]
+
+      walk2(no_sd, num_variables,
+            ~df[,(.x):=(eval(parse(text = .y))-mean(eval(parse(text = .y)),
+                                                    na.rm = TRUE))/sd(eval(parse(text = .y)),
+                                                                      na.rm = TRUE),
+                by = factor_vars])
+      df <- df
+
+      for(i in 1:length(num_variables)){
+        df[,(num_variables[i]):=ifelse(eval(parse(text = no_sd[i])) > -3 & eval(parse(text = no_sd[i])) < 3,
+                                       eval(parse(text = num_variables[i])),
+                                       NA),
+           by = factor_vars]
+      }
+      df[,(no_sd):=NULL]
+
+      result <- df
+    }
+    result
+  }, error = function(e) message("At least one of the selected variables don´t have a factor datatype"))
+}
+
+#' nas_before_after_outliers
+#'
+#' Count the number of NAs before and after applying the function *delete_outliers*
+#'
+#' This function allows you to have a list where each sublist is the difference of NAs for each integer or numeric variable.
+#'
+#' @param df dataset that we want to clean outliers
+#' @param factor_vars factor variables to delete outliers
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFROM purrr map set_names pluck map_dfc discard
+#' @importFROM stringr str_subset
+#'
+#'
+#' @return This function allows us to return a list which each sublist is for each of the integer and numeric variables where is going to be a dataset that counts the number of NAs before and after applying the function *delete_outliers* based on the factor variables (if there is one).
+#'
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' nas_before_after_outliers(df = df)
+#' nas_before_after_outliers(df = df, factor_vars = classes_vector(data_type = "factor", df = df)[c(2,4)])
+#' }
+#'
+nas_before_after_outliers <- function(df, factor_vars = NULL){
+
+  factor_vars <- unique(factor_vars)
+  num_variables <- classes_vector(data_type = c("integer", "numeric"), df = df)
+  df_delete_outliers <- delete_outliers(df = copy(df), factor_vars = factor_vars)
+
+  NAS_count <- map(list(df, df_delete_outliers), function(i){
+    map(num_variables, ~
+          i[is.na(eval(parse(text = .x))), .N, by = factor_vars]) %>%
+      set_names(num_variables)
+  }) %>% set_names("NA_before_delete_outliers", "NA_after_delete_outliers")
+
+
+  NAS_count <- map(1:length(pluck(NAS_count, 1)), function(i){
+
+    each <- map(names(NAS_count), ~pluck(NAS_count, .x, i)) %>%
+      set_names(names(NAS_count))
+
+    if((dim(pluck(each, 1))[1] == 0) & (dim(pluck(each, 2))[1] != 0)){
+      result <- pluck(each, "NA_after_delete_outliers") %>% copy() %>%
+        .[,NAS_BEFORE:= 0] %>% setnames(old = "N", new = "NAS_AFTER") %>%
+        .[,CHANGE:=NAS_AFTER]
+
+    }else if((dim(pluck(each, 1))[1] != 0) & (dim(pluck(each, 2))[1] == 0)){
+      result <- pluck(each, "NA_before_delete_outliers") %>% copy() %>%
+        .[,NAS_AFTER:= 0] %>% setnames(old = "N", new = "NAS_BEFORE") %>%
+        .[,CHANGE:=0]
+
+    }else{
+      if(is.null(factor_vars)){
+        result <- suppressMessages(map_dfc(c("NA_before_delete_outliers",
+                                             "NA_after_delete_outliers"),
+                                           ~pluck(each, .x) %>% unlist() %>% unname) %>%
+                                     as.data.table() %>% setnames(old = names(.),
+                                                                  new = c("NAS_BEFORE",
+                                                                          "NAS_AFTER")))
+      }else{
+        result <- iterative_merge(dfs_list = each,
+                                  key = factor_vars,
+                                  all.x = TRUE) %>%
+          setnames(old = str_subset(string = names(.),
+                                    pattern = obtain_regex(pattern =
+                                                             c(obtain_regex(pattern = ".x",
+                                                                            return_regex = "ends_with_pattern"),
+                                                               obtain_regex(pattern = ".y",
+                                                                            return_regex = "ends_with_pattern")),
+                                                           return_regex = "or")),
+                   new = c("NAS_BEFORE", "NAS_AFTER"))
+      }
+      result <- result[,CHANGE:=(NAS_AFTER-NAS_BEFORE)]
+    }
+    result %>% setcolorder(c(factor_vars, "NAS_BEFORE", "NAS_AFTER", "CHANGE")) %>%
+      return()
+  }) %>% set_names(num_variables) %>% discard(~dim(.x)[1] == 0)
+
+  NAS_count
 }

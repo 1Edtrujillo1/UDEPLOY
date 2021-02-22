@@ -424,6 +424,66 @@ classes_vector <- function(data_type, df){
   vars[vars %in% data_type] %>% names() %>% return()
 }
 
+#' firstvariables_df_datatype
+#'
+#' Check if the first variables have an specific data type and return the names of that variables
+#'
+#' This function allows you to check if the first or the first two or the first three variables have the same data type and return the names of that variables.
+#'
+#' @param df dataset to check.
+#' @param data_type string datatype that we are interested.
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFROM lubridate is.Date
+#' @importFROM purrr set_names pluck map every flatten_lgl keep map_int
+#' @importFROM stringr str_which str_glue
+#'
+#' @return This function allows us to return:"
+#' \itemize{
+#'   \item Names of the first or first, second or first, second and third variables that have the same data type.
+#'   \item In other case return a message indicate that the first variables do not have that data type.
+#' }
+#'
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' firstvariables_df_datatype(df = df, data_type = "factor")
+#' firstvariables_df_datatype(df = df, data_type = "integer")
+#' }
+#'
+firstvariables_df_datatype <- function(df,
+                                       data_type = c("character", "numeric", "integer",
+                                                     "date", "numeric", "factor")){
+
+  datatype = list(is.character, is.numeric, is.integer,
+                  is.Date, is.logical, is.factor) %>%
+    set_names("character", "numeric", "integer", "date", "numeric", "factor") %>%
+    pluck(data_type)
+
+  indexes_variables <- list(three_variables = 1:3,
+                            two_variables = 1:2,
+                            first_variable = 1)
+
+  vars <- map(indexes_variables, function(i){
+    each <- df[,lapply(.SD, datatype), .SDcols = i]
+    list(each %>% every(~isTRUE(.x)), #check
+         each %>% names()) %>% return() #variables
+  }) %>%
+    .[str_which(string = map(., 1) %>% flatten_lgl(),
+                pattern = "TRUE")] %>% map(2)
+
+  vars <- keep(vars, ~length(.x) == map_int(vars, length) %>% max()) %>%
+    pluck(1)
+
+  if(is.null(vars)) vars <- str_glue("First variables do not have {data_type} data type")
+  else vars
+
+  vars
+}
+
 # OUTLIERS ----------------------------------------------------------------
 
 #' delete_outliers

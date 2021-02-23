@@ -42,7 +42,7 @@ mongo_manipulation(
 \item{element_id_update}{values to update for the variable \code{id_update}}
 }
 \value{
-#' "This function \emph{different results} based on \code{mongo_choice} variable:"
+"This function returns \emph{different results} based on \code{mongo_choice} variable:"
 \itemize{
 \item If \code{mongo_choice = "push"} then you only need to use the variable \code{push_record} to push the table with the information to your MongoDB collection.
 \item If \code{mongo_choice = "pull"} is not necessary to use other variable, because you are going to pull the dataset from the config file.

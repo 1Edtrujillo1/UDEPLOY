@@ -32,3 +32,6 @@ Imports:
     readxl,
     lubridate,
     tidyr
+Suggests: 
+    DBI,
+    odbc

@@ -26,7 +26,7 @@
 #' @importFROM jsonlite toJSON
 #'
 #' @return
-#' #' "This function *different results* based on \code{mongo_choice} variable:"
+#' "This function returns *different results* based on \code{mongo_choice} variable:"
 #' \itemize{
 #'   \item If \code{mongo_choice = "push"} then you only need to use the variable \code{push_record} to push the table with the information to your MongoDB collection.
 #'   \item If \code{mongo_choice = "pull"} is not necessary to use other variable, because you are going to pull the dataset from the config file.
@@ -207,6 +207,178 @@ pull_from_environment <- function(config_file,
   base::get("NEW_element", envir = NEW_environment) %>%
     return()
 }
+
+# SQL DB ------------------------------------------------------------------
+
+#' sql_manipulation
+#'
+#' push or pull or watch the information of the database
+#'
+#' This function allows you to push or pull or watch the information of the database
+#'
+#' @param dsn our \code{server} if is local
+#' @param server our \code{server} if is not local
+#' @param database database in the \code{server}
+#' @param uid Your username to enter to the \code{server}
+#' @param pwd your password to enter to the \code{server}
+#' @param sql_choice choice that we want to do with a table in a database
+#' @param df_identifier string name that identify a table in a database.
+#' @param table_name name of the table
+#' @param df dataset that we want to pull to the database
+#' @param attributes variables to select from the table
+#'
+#' @author Eduardo Trujillo
+#'
+#' @importFROM DBI dbConnect dbWriteTable dbGetQuery dbListTables dbListFields dbDisconnect
+#' @importFROM odbc odbc
+#' @importFROM stringr str_glue str_c str_subset
+#' @importFROM purrr map set_names
+#'
+#' @return
+#' "This function returns *different results* based on \code{mongo_choice} variable:"
+#' \itemize{
+#'   \item If \code{sql_choice = "push"} then you need to use the parameters  \code{df_identifier}, \code{table_name}, \code{df} and if you want to select specific variables tu push in the table use the parameter \code{attributes}. All of these to push a table to the database.
+#'   \item If \code{sql_choice = "pull"} then  you need to use the parameters  \code{df_identifier} and  \code{table_name} (or use only \code{table_name} indicating the  \code{df_identifier} and  \code{table_name} together) and if you want to select specific variables tu pul from the table use the parameter \code{attributes}. All of these to pull to our R-studio session the table from the database.
+#'   \item If \code{sql_choice = "tables_info"} then you need to use the parameter \code{df_identifier} to bring a list of all the tables names (with its variables).
+#' }
+#'
+#' @export
+#'
+#' @note If there is something wrong with the connection will return a message string.
+#'
+#' @example
+#' \dontrun{
+#' *1. push*
+#' library(datasets)
+#' *1.1 specific variables*
+#' sql_manipulation(server = "server",
+#'                  database = "database name",
+#'                  uid = "user name",
+#'                  pwd = "password",
+#'                  sql_choice = "push",
+#'                  df_identifier = "PERSONAL",
+#'                  table_name = "iris_df",
+#'                  df = iris,
+#'                  attributes = c("Petal.Width", "Species"))
+#' *1.2 all variables*
+#' sql_manipulation(server = "server",
+#'                  database = "database name",
+#'                  uid = "user name",
+#'                  pwd = "password",
+#'                  sql_choice = "push",
+#'                  df_identifier = "PERSONAL",
+#'                  table_name = "iris_df",
+#'                  df = iris)
+#' *2. pull*
+#' *2.1 specific variables*
+#' *2.1.1 with df_identifier*
+#' sql_manipulation(server = "server",
+#'                  database = "database name",
+#'                  uid = "user name",
+#'                  pwd = "password",
+#'                  sql_choice = "pull",
+#'                  df_identifier = "PERSONAL",
+#'                  table_name = "TABLE1",
+#'                  attributes = c("TICKET", "DATE"))
+#'
+#' *2.1.2 without df_identifier*
+#'sql_manipulation(server = "server",
+#'                 database = "database name",
+#'                 uid = "user name",
+#'                 pwd = "password",
+#'                 sql_choice = "pull",
+#'                 table_name = "PERSONAL_TABLE1",
+#'                 attributes = c("TICKET", "DATE"))
+#' *2.2 all variables*
+#' *2.2.1 with df_identifier*
+#'sql_manipulation(server = "server",
+#'                 database = "database name",
+#'                 uid = "user name",
+#'                 pwd = "password",
+#'                 sql_choice = "pull",
+#'                 df_identifier = "PERSONAL",
+#'                 table_name = "TABLE1")
+#' *2.2.2 without df_identifier*
+#'sql_manipulation(server = "server",
+#'                 database = "database name",
+#'                 uid = "user name",
+#'                 pwd = "password",
+#'                 sql_choice = "pull",
+#'                 table_name = "PERSONAL_TABLE1")
+#' *3. tables info*
+#'info <- sql_manipulation(server = "server",
+#'                         database = "database name",
+#'                         uid = "user name",
+#'                         pwd = "password",
+#'                         sql_choice = "tables_info",
+#'                         df_identifier = "PERSONAL")
+#' *4. pull al variables from all datasets*
+#'map2(names(info), info,
+#'~ sql_manipulation(server = "server",
+#'                   database = "database name",
+#'                   uid = "user name",
+#'                   pwd = "password",
+#'                   sql_choice = "pull",
+#'                   table_name = .x,
+#'                  attributes = .y)) %>%
+#'set_names(names(info))
+#'
+#' }
+#'
+sql_manipulation <- function(dsn = NULL, server = NULL,
+                             database, uid, pwd,
+                             sql_choice = c("push", "pull", "tables_info"),
+                             df_identifier = NULL, table_name = NULL,
+                             df = NULL, attributes = NULL){
+
+  SQL_connection <- tryCatch({
+    dbConnect(drv = odbc(),
+              driver = "SQL Server",
+              dsn = dsn,
+              server = server,
+              database = database,
+              uid = uid,
+              pwd = pwd,
+              port = 1433)
+  }, error=function(e) "Incorrect connection")
+
+  if(!is.character(SQL_connection)){
+
+    if(sql_choice == "push"){
+      dbWriteTable(conn = SQL_connection,
+                   name = str_glue("{df_identifier}_{table_name}"),
+                   value = df %>% clean_df(col_select = attributes),
+                   overwrite = TRUE)
+
+      result <- str_glue("pushed dataset {df_identifier}_{table_name}")
+
+    }else if(sql_choice == "pull"){
+      query_variables <- ifelse(is.null(attributes), "*",
+                                str_c("[",attributes,"]", collapse = ","))
+
+      table <- ifelse(is.null(df_identifier), table_name,
+                      str_glue("{df_identifier}_{table_name}"))
+
+      result <- dbGetQuery(conn = SQL_connection,
+                           statement = str_glue("SELECT {query_variables} FROM [{table}]")) %>%
+        clean_df()
+
+    }else if(sql_choice == "tables_info"){
+      tables <- str_subset(string = dbListTables(conn = SQL_connection),
+                           pattern = obtain_regex(pattern = df_identifier,
+                                                  return_regex = "starts_with_pattern"))
+
+      result <- map(tables, ~ dbListFields(conn = SQL_connection, name =.x)) %>%
+        set_names(tables)
+    }
+    dbDisconnect(SQL_connection)
+
+  }else{result <- SQL_connection}
+
+  result
+}
+
+
 
 # MERGES ------------------------------------------------------------------
 

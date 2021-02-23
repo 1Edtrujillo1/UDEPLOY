@@ -665,6 +665,7 @@ nas_before_after_outliers <- function(df, factor_vars = NULL){
 #' @note
 #' \itemize{
 #'   \item The intention of this function is that in the future we use this new variable as an ID for merges.
+#'   \item If for some reason the key variable is not unique then the program re-ajust it, so filter those duplicated observations and concatenate them with the corresponding index number (from 1 to the length of the duplicated values).
 #'   \item If the dataset has a *date variable* then use this variable as reference but if not is going to create a new date variable reference
 #'   \item today()+(1:length(vector)) is: sequence of days from today to the day that represent the last element of the vector
 #'   \item today()+(1:length(vector))*days(-1) is: days(-1) invert the order, sequence this is from the day that represent the first element of the vector to yesterday "today()-1"
@@ -709,6 +710,12 @@ key_creation <- function(df, factor_vars = NULL){
 
         ) %>% append(list(sep = "_")) %>% do.call(what = str_c)
       }
+
+      if(length(result) == length(unique(result))){ result
+      }else{
+        result[duplicated(result)] <- str_glue("{result[duplicated(result)]}_{1:length(result[duplicated(result)])}")
+      }
+
       result <- copy(df)[,KEY:=result]
     }
     result

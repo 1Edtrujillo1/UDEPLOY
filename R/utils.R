@@ -121,3 +121,38 @@ list_vs_df <- function(list, output = c("list_to_dfs", "dfs_to_list")){
   }
   result
 }
+
+# DYNAMIC DATA ------------------------------------------------------------
+
+#' design_DT
+#'
+#' Visualize a dataset in a JS format.
+#'
+#' This function allows you to transform your dataset into JS format (beautiful design).
+#'
+#' @param df dataset to make the design
+#' @param style theme of the datatable
+#' @param extra_options *list* of additional **options** arguments
+#' @param ... extra arguments in \code{datatable}
+#'
+#' @author Eduardo Trujillo
+#'
+#' @importFROM DT datatable
+#'
+#' @return The dataset in DT format.
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' desing_DT(df = dataset)
+#' }
+#'
+design_DT <- function(df, style = 'bootstrap', extra_options = NULL, ...){
+  datatable(data = df,
+            style = style,
+            filter = list(position = 'top', clear = FALSE),
+            options = list(autoWidth = TRUE) %>% append(extra_options),
+            ...) %>%
+    return()
+}
+

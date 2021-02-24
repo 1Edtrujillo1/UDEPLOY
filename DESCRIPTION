@@ -31,7 +31,8 @@ Imports:
     haven,
     readxl,
     lubridate,
-    tidyr
+    tidyr,
+    DT
 Suggests: 
     DBI,
     odbc

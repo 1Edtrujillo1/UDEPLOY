@@ -208,6 +208,39 @@ message_reactive <- function(id, text, type = c("success", "fail")){
   })
 }
 
+#' footer_close_design
+#'
+#' Create a button footer with a particular design
+#'
+#' This function allows you to create a button footer with a particular design
+#'
+#' @param label text to show
+#' @param type_letter css type of letter
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM stringr str_glue
+#'
+#' @return This function returns a button with a beautiful text design
+#'
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' shoModal(modalDialog(title = "title",
+#'                      footer = footer_close_design(label = "Close",
+#'                                                   type_letter = "system-ui")))
+#' }
+#'
+footer_close_design <- function(label, type_letter){
+  original <- modalButton(label = label,
+                          icon = icon(name = "eject", lib ="glyphicon"))
+  original$attribs <- original$attribs %>%
+    append(list(style = str_glue("font-family:{type_letter};")))
+  original
+}
+
 # NAVBAR ------------------------------------------------------------------
 
 #' rightInputs_Navbar

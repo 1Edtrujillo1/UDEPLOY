@@ -331,6 +331,8 @@ sql_manipulation <- function(dsn = NULL, server = NULL,
                              df_identifier = NULL, table_name = NULL,
                              df = NULL, attributes = NULL){
 
+  options(warn = -1) #warn = -1 hide warnings
+
   SQL_connection <- tryCatch({
     dbConnect(drv = odbc(),
               driver = "SQL Server",

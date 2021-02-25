@@ -215,6 +215,8 @@ message_reactive <- function(id, text, type = c("success", "fail")){
 #' This function allows you to create a button footer with a particular design
 #'
 #' @param label text to show
+#' @param icon_name name of icon
+#' @param icon_lib library of the icon
 #' @param type_letter css type of letter
 #'
 #' @author Eduardo Trujillo
@@ -229,13 +231,13 @@ message_reactive <- function(id, text, type = c("success", "fail")){
 #' @example
 #' \dontrun{
 #' shoModal(modalDialog(title = "title",
-#'                      footer = footer_close_design(label = "Close",
-#'                                                   type_letter = "system-ui")))
+#'                      footer = footer_close_design(label = "Close")))
 #' }
 #'
-footer_close_design <- function(label, type_letter){
+footer_close_design <- function(label, icon_name = "eject", icon_lib = "glyphicon",
+                                type_letter = "system-ui"){
   original <- modalButton(label = label,
-                          icon = icon(name = "eject", lib ="glyphicon"))
+                          icon = icon(name = icon_name, lib = icon_lib))
   original$attribs <- original$attribs %>%
     append(list(style = str_glue("font-family:{type_letter};")))
   original

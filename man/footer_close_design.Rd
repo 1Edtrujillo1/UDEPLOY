@@ -4,10 +4,19 @@
 \alias{footer_close_design}
 \title{footer_close_design}
 \usage{
-footer_close_design(label, type_letter)
+footer_close_design(
+  label,
+  icon_name = "eject",
+  icon_lib = "glyphicon",
+  type_letter = "system-ui"
+)
 }
 \arguments{
 \item{label}{text to show}
+
+\item{icon_name}{name of icon}
+
+\item{icon_lib}{library of the icon}
 
 \item{type_letter}{css type of letter}
 }

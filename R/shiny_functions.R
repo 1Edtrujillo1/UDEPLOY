@@ -157,6 +157,80 @@ UIelement <- function(id, outputID){
   uiOutput(NS(id, outputID))
 }
 
+#' iterative_actionButton
+#'
+#' Create multiple action buttons
+#'
+#' This function allows you to create multiple action buttons inside a shiny module
+#'
+#' @param id module id
+#' @param inputIds vector of inputId of each actionButton
+#' @param labels vector of label of each actionButton
+#' @param icons vector of icon-name of each actionButton
+#' @param icons_lib vector of library of each icon of each actionButton
+#' @param style CSS modification of the action buttons
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM purrr pmap
+#'
+#' @return return multiple action buttons without mentioning \code{actionButton} many times.
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' iterative_actionButton(id = id, inputIds = c("editData", "outlierId"),
+#'                        labels = c("Edit Data", "Outliers"),
+#'                        icons = c("wrench", "erase"),
+#'                        icons_lib = rep("glyphicon", 2))
+#' }
+#' }
+#'
+iterative_actionButton <- function(id, inputIds, labels, icons, icons_lib,
+                                   style = "font-family:system-ui;"){
+  pmap(list(inputIds, labels, icons, icons_lib),
+       ~ actionButton(inputId = NS(id, ..1), label = ..2,
+                      icon = icon(name = ..3, lib = ..4),
+                      style = style)
+  ) %>% return()
+}
+
+#' footer_close_design
+#'
+#' Create a button footer with a particular design
+#'
+#' This function allows you to create a button footer with a particular design
+#'
+#' @param label text to show
+#' @param icon_name name of icon
+#' @param icon_lib library of the icon
+#' @param type_letter css type of letter
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import shiny
+#' @importFROM stringr str_glue
+#'
+#' @return This function returns a button with a beautiful text design
+#'
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' shoModal(modalDialog(title = "title",
+#'                      footer = footer_close_design(label = "Close")))
+#' }
+#'
+footer_close_design <- function(label, icon_name = "eject", icon_lib = "glyphicon",
+                                type_letter = "system-ui"){
+  original <- modalButton(label = label,
+                          icon = icon(name = icon_name, lib = icon_lib))
+  original$attribs <- original$attribs %>%
+    append(list(style = str_glue("font-family:{type_letter};")))
+  original
+}
+
 #' message_reactive
 #'
 #' Create an interactive box message
@@ -206,41 +280,6 @@ message_reactive <- function(id, text, type = c("success", "fail")){
         type = "error")
     }
   })
-}
-
-#' footer_close_design
-#'
-#' Create a button footer with a particular design
-#'
-#' This function allows you to create a button footer with a particular design
-#'
-#' @param label text to show
-#' @param icon_name name of icon
-#' @param icon_lib library of the icon
-#' @param type_letter css type of letter
-#'
-#' @author Eduardo Trujillo
-#'
-#' @import shiny
-#' @importFROM stringr str_glue
-#'
-#' @return This function returns a button with a beautiful text design
-#'
-#' @export
-#'
-#' @example
-#' \dontrun{
-#' shoModal(modalDialog(title = "title",
-#'                      footer = footer_close_design(label = "Close")))
-#' }
-#'
-footer_close_design <- function(label, icon_name = "eject", icon_lib = "glyphicon",
-                                type_letter = "system-ui"){
-  original <- modalButton(label = label,
-                          icon = icon(name = icon_name, lib = icon_lib))
-  original$attribs <- original$attribs %>%
-    append(list(style = str_glue("font-family:{type_letter};")))
-  original
 }
 
 # NAVBAR ------------------------------------------------------------------

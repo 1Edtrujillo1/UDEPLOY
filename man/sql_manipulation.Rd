@@ -10,7 +10,7 @@ sql_manipulation(
   database,
   uid,
   pwd,
-  sql_choice = c("push", "pull", "tables_info"),
+  sql_choice = c("check_connection", "push", "pull", "tables_info"),
   df_identifier = NULL,
   table_name = NULL,
   df = NULL,
@@ -41,6 +41,7 @@ sql_manipulation(
 \value{
 "This function returns \emph{different results} based on \code{mongo_choice} variable:"
 \itemize{
+\item If \code{sql_choice = "check_connection"} then returns the SQL connection
 \item If \code{sql_choice = "push"} then you need to use the parameters  \code{df_identifier}, \code{table_name}, \code{df} and if you want to select specific variables tu push in the table use the parameter \code{attributes}. All of these to push a table to the database.
 \item If \code{sql_choice = "pull"} then  you need to use the parameters  \code{df_identifier} and  \code{table_name} (or use only \code{table_name} indicating the  \code{df_identifier} and  \code{table_name} together) and if you want to select specific variables tu pul from the table use the parameter \code{attributes}. All of these to pull to our R-studio session the table from the database.
 \item If \code{sql_choice = "tables_info"} then you need to use the parameter \code{df_identifier} to bring a list of all the tables names (with its variables).

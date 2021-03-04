@@ -237,6 +237,7 @@ pull_from_environment <- function(config_file,
 #' @return
 #' "This function returns *different results* based on \code{mongo_choice} variable:"
 #' \itemize{
+#'   \item If \code{sql_choice = "check_connection"} then returns the SQL connection
 #'   \item If \code{sql_choice = "push"} then you need to use the parameters  \code{df_identifier}, \code{table_name}, \code{df} and if you want to select specific variables tu push in the table use the parameter \code{attributes}. All of these to push a table to the database.
 #'   \item If \code{sql_choice = "pull"} then  you need to use the parameters  \code{df_identifier} and  \code{table_name} (or use only \code{table_name} indicating the  \code{df_identifier} and  \code{table_name} together) and if you want to select specific variables tu pul from the table use the parameter \code{attributes}. All of these to pull to our R-studio session the table from the database.
 #'   \item If \code{sql_choice = "tables_info"} then you need to use the parameter \code{df_identifier} to bring a list of all the tables names (with its variables).
@@ -248,6 +249,12 @@ pull_from_environment <- function(config_file,
 #'
 #' @example
 #' \dontrun{
+#' *0. Check Connection*
+#' sql_manipulation(server = "server,
+#'                  database = "database name",
+#'                  uid = "user name",
+#'                  pwd = "pwd",
+#'                  sql_choice = "check_connection")
 #' *1. push*
 #' library(datasets)
 #' *1.1 specific variables*
@@ -327,7 +334,7 @@ pull_from_environment <- function(config_file,
 #'
 sql_manipulation <- function(dsn = NULL, server = NULL,
                              database, uid, pwd,
-                             sql_choice = c("push", "pull", "tables_info"),
+                             sql_choice = c("check_connection", "push", "pull", "tables_info"),
                              df_identifier = NULL, table_name = NULL,
                              df = NULL, attributes = NULL){
 
@@ -344,39 +351,43 @@ sql_manipulation <- function(dsn = NULL, server = NULL,
               port = 1433)
   }, error=function(e) "Incorrect connection")
 
-  if(!is.character(SQL_connection)){
+  if(sql_choice == "check_connection"){
+    result <- SQL_connection
 
-    if(sql_choice == "push"){
-      dbWriteTable(conn = SQL_connection,
-                   name = str_glue("{df_identifier}_{table_name}"),
-                   value = df %>% clean_df(col_select = attributes),
-                   overwrite = TRUE)
+  }else{
+    if(!is.character(SQL_connection)){
 
-      result <- str_glue("pushed dataset {df_identifier}_{table_name}")
+      if(sql_choice == "push"){
+        dbWriteTable(conn = SQL_connection,
+                     name = str_glue("{df_identifier}_{table_name}"),
+                     value = df %>% clean_df(col_select = attributes),
+                     overwrite = TRUE)
 
-    }else if(sql_choice == "pull"){
-      query_variables <- ifelse(is.null(attributes), "*",
-                                str_c("[",attributes,"]", collapse = ","))
+        result <- str_glue("pushed dataset {df_identifier}_{table_name}")
 
-      table <- ifelse(is.null(df_identifier), table_name,
-                      str_glue("{df_identifier}_{table_name}"))
+      }else if(sql_choice == "pull"){
+        query_variables <- ifelse(is.null(attributes), "*",
+                                  str_c("[",attributes,"]", collapse = ","))
 
-      result <- dbGetQuery(conn = SQL_connection,
-                           statement = str_glue("SELECT {query_variables} FROM [{table}]")) %>%
-        clean_df()
+        table <- ifelse(is.null(df_identifier), table_name,
+                        str_glue("{df_identifier}_{table_name}"))
 
-    }else if(sql_choice == "tables_info"){
-      tables <- str_subset(string = dbListTables(conn = SQL_connection),
-                           pattern = obtain_regex(pattern = df_identifier,
-                                                  return_regex = "starts_with_pattern"))
+        result <- dbGetQuery(conn = SQL_connection,
+                             statement = str_glue("SELECT {query_variables} FROM [{table}]")) %>%
+          clean_df()
 
-      result <- map(tables, ~ dbListFields(conn = SQL_connection, name =.x)) %>%
-        set_names(tables)
-    }
-    dbDisconnect(SQL_connection)
+      }else if(sql_choice == "tables_info"){
+        tables <- str_subset(string = dbListTables(conn = SQL_connection),
+                             pattern = obtain_regex(pattern = df_identifier,
+                                                    return_regex = "starts_with_pattern"))
 
-  }else{result <- SQL_connection}
+        result <- map(tables, ~ dbListFields(conn = SQL_connection, name =.x)) %>%
+          set_names(tables)
+      }
+      dbDisconnect(SQL_connection)
 
+    }else{result <- SQL_connection}
+  }
   result
 }
 

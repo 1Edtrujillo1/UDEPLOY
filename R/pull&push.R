@@ -208,6 +208,116 @@ pull_from_environment <- function(config_file,
     return()
 }
 
+
+# S3 AWS  -----------------------------------------------------------------
+
+#' RDs_and_S3
+#'
+#' Read an S3 bucket or push, pull or delete an RDs data from the S3 bucket.
+#'
+#' This function allows you to read an S3 bucket or manipulate an RDs data with S3 AWS
+#'
+#' @param dfs dataset or a list of datasets
+#' @param objects vector of files in S3 (it could be folder/file path)
+#' @param bucket name of your S3 bucket
+#' @param choice choice that we want to do with the RDs data
+#'
+#' @author Eduardo Trujillo
+#'
+#' @importFROM aws.s3 bucketlist get_bucket s3saveRDS s3readRDS delete_object
+#' @importFROM stringr str_c str_glue
+#' @importFROM purrr walk2 map walk
+#'
+#' @return
+#' "This function returns *different results* based on \code{choice} variable:"
+#' \itemize{
+#'   \item If \code{choice = "watch_bucket"} then you only need to use the variable \code{bucket} to see what is inside the AWS S3 bucket.
+#'   \item If \code{choice = "push"} then you need to use the variable \code{dfs} representing the dataset (or a list of datasets) in your R session, the  \code{objects} representing the path on AWS S3. and the name of your \code{bucket}.
+#'   \item If \code{choice = "pull"} then you need to use  the variable \code{objects} representing a vector of path of your RDs data on AWS S3. and the name of your \code{bucket} to pull in our R-session.
+#'   \item If \code{choice = "delete"} then you need to use  the variable \code{objects} representing a vector of path of your RDs data on AWS S3. and the name of your \code{bucket} to delete in AWS S3.
+#' }
+#'
+#' @export
+#'
+#' @note
+#'\itemize{
+#'   \item You can use this function inside your shiny app.
+#'   \item If \code{mongo_choice = "push"} then in AWS S3 is going to be an RDs data (s).
+#' }
+#'
+#' @example
+#' \dontrun{
+#' df <- datasets::iris
+#' Sys.setenv("AWS_ACCESS_KEY_ID" = "ACCESS KEY",
+#'            "AWS_SECRET_ACCESS_KEY" = "SECRET ACCESS KEY",
+#'            "AWS_DEFAULT_REGION" = "region")
+#'
+#' *0.watch bucket*
+#' RDs_and_S3(bucket = "aimagination-files",choice = "watch_bucket")
+#'
+#' *1. push RDs data*
+#' *1.1 One object*
+#' RDs_and_S3(bucket = "aimagination-files",
+#'            dfs = df,
+#'            objects = "file/example",
+#'            choice = "push")
+#' *1.2 Multiple Objects*
+#'RDs_and_S3(bucket = "aimagination-files",
+#'           dfs = list(df,df,df),
+#'           objects = c("file/example1", "example2", "file2/example3"), #are the names that I wanted.
+#'           choice = "push")
+#'
+#' *2. Pull RDs data*
+#' *2.1 One object*
+#' RDs_and_S3(bucket = "aimagination-files",
+#'            objects = "file/example",
+#'            choice = "pull")
+#' *2.2 Multiple objects*
+#' RDs_and_S3(bucket = "aimagination-files",
+#'            objects = c("file/example1", "example2","file2/example3"),
+#'            choice = "pull")
+#'
+#' *3. Delete RDs data on AWS S3*
+#' *3.1 One object*
+#'  RDs_and_S3(bucket = "aimagination-files",
+#'             objects = "file/example",
+#'             choice = "delete")
+#' *3.2 Multiple objects*
+#'  RDs_and_S3(bucket = "aimagination-files",
+#'             objects = c("file/example1", "example2", "file2/example3"),
+#'             choice = "delete")
+#' }
+#'
+RDs_and_S3 <- function(dfs = NULL, objects = NULL, bucket,
+                       choice = c("watch_bucket", "push", "pull", "delete")){
+
+  bucketlist()
+
+  if(choice == "watch_bucket"){
+
+    get_bucket(bucket) %>% return()
+
+  }else if(choice == "push"){
+    if(!is.null(dfs %>% dim())){
+      s3saveRDS(x = dfs, object = str_c(objects, "rds", sep = "."), bucket = bucket)
+    }else{
+      walk2(dfs, objects,
+            ~ s3saveRDS(x = ..1, object = str_c(..2, "rds", sep = "."),
+                        bucket = bucket)
+      )
+    }
+  }else if(choice == "pull"){
+    map(objects,
+        ~s3readRDS(object = str_glue("s3://{bucket}/{.x}.rds"),
+                   bucket = bucket)) %>% return()
+
+  }else if(choice == "delete"){
+    walk(objects,
+         ~ delete_object(object = str_c(..1, "rds", sep = "."),
+                         bucket = bucket))
+  }
+}
+
 # SQL DB ------------------------------------------------------------------
 
 #' sql_manipulation

@@ -2,6 +2,7 @@
 
 export(NotificationmenuInput)
 export(NotificationmenuOutput)
+export(RDs_and_S3)
 export(UIelement)
 export(assign_data_type)
 export(classes_vector)

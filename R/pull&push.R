@@ -391,34 +391,144 @@ sql_manipulation <- function(dsn = NULL, server = NULL,
   result
 }
 
-
-
 # MERGES ------------------------------------------------------------------
 
 #' iterative_merge
 #'
 #' Merge a list of datasets
 #'
-#' This function allows you to make any type of merge of different datasets withing a list.
+#' This function allows you to make any type of merge of different datasets withing a list unifying the ID variable and cleaning duplicated variables.
 #'
 #' @param dfs_list list of datasets
-#' @param key join ID
+#' @param key join IDs
+#' @param keep argument that indicate if you want to get .x variables or .y variables
 #' @param ... additional parameters of merge
 #'
 #' @author Eduardo Trujillo
 #'
 #' @import data.table
+#' @importFROM purrr map2
 #'
-#' @return This function returns a merged dataset of all the datasets from \code{dfs_list}
-#'
+#' @return
+#' "This function returns a merged dataset of all datasets from \code{dfs_list} with *different results* based on \code{keep} argument:"
+#' \itemize{
+#'   \item If \code{keep is NULL} return the merged dataset without cleaning the duplicated variables after merging.
+#'   \item If \code{keep = "x"} return the dataset with the no duplicated variables and the duplicated old variables without the extension .x
+#'   \item If \code{keep = "y"} return the dataset with the no duplicated variables and the duplicated new variables without the extension .y
+#' }
 #' @export
 #'
+#' @note The {keys argument} ids of each dataset is going to be renamed as _ID_, with the intention that the merge works with the variables with name _ID_
+#'
 #' @example
-#'iterative_merge(dfs_list = list(data.table(a=rep(1:2,each=3), b=1:6, key="a,b"),
-#'                                data.table(a=0:1, bb=10:11, key="a")),
+#'df1 <- data.table(id = c(1, 5, 7, 5),
+#'                  num = c(501, 502, 503, 504),
+#'                  llave = c(1, 2, 3, 4))
+#'df2 <- data.table(reference = c(1, 3, 1, 5, 5),
+#'                  marca = c("Audi", "BMW", "MAZDA", "DODGE", "FERRARI"),
+#'                  llave = c(1, 4, 3, 2, 5))
+#'
+#' # *final dataset with duplicated variables*
+#' iterative_merge(dfs_list = list(df1, df2), key = c("id", "reference"))
+#' # *keep x*
+#' iterative_merge(dfs_list = list(df1, df2), key = c("id", "reference"), keep = "x")
+#' # *keep y*
+#' iterative_merge(dfs_list = list(df1, df2), key = c("id", "reference"),keep = "y")
+#' # *unique key id*
+#' iterative_merge(dfs_list = list(data.table(a=rep(1:2,each=3), b=1:6, key="a,b"),
+#'                                 data.table(a=0:1, bb=10:11, key="a")),
 #'                 key = "a")
 #'
-iterative_merge <- function(dfs_list, key, ...){
-  Reduce(function(x,y) merge(x, y, by = key, ...),
-         x = dfs_list)
+iterative_merge <- function(dfs_list, key, keep = NULL, ...){
+
+  dfs_list <- map2(copy(dfs_list), key, ~ setnames(x = .x, old = .y, new = "ID"))
+
+  df_merged <- Reduce(function(x,y) merge.data.table(x, y, by = "ID", ...),
+                      x = dfs_list)
+
+  if(is.null(keep)){
+    result <- df_merged
+  }else{result <- clean_merged_table(df_merged = df_merged, keep = keep)}
+
+  result
+}
+
+#' clean_merged_table
+#'
+#' Unify duplicated columns.
+#'
+#' This function allows you after *merging* datasets, unify duplicated columns (this is the extension .x and .y)
+#'
+#' @param df_merged dataset with duplicated columns
+#' @param keep argument that indicate if you want to get .x variables or .y variables
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFROM purrr map set_names pluck
+#' @importFROM stringr str_subset str_remove_all
+#'
+#' @return
+#' "This function returns *different results* based on \code{keep} argument:"
+#' \itemize{
+#'   \item If \code{keep = "x"} return the dataset with the no duplicated variables and the duplicated old variables without the extension .x
+#'   \item If \code{keep = "y"} return the dataset with the no duplicated variables and the duplicated new variables without the extension .y
+#' }
+#'
+#' @note If there is no duplicated variables will show an string message.
+#'
+#' @example
+#' \dontrun{
+#'df1 <- data.table(id = c(1, 5, 7, 5),
+#'                  num = c(501, 502, 503, 504),
+#'                  check_result = c(1, 2, 3, 4))
+#'df2 <- data.table(id = c(1, 3, 1, 5, 5),
+#'                  brand = c("Audi", "BMW", "MAZDA", "DODGE", "FERRARI"),
+#'                  check_result = c(1, 4, 3, 2, 5))
+#'
+#'df <- udeploy::iterative_merge(dfs_list = list(df1, df2), key = "id")
+#'
+#' *keep x*
+#' df <- clean_merged_table(df_merged = df, keep = "x")
+#'
+#' *keep y*
+#' df <- clean_merged_table(df_merged = df, keep = "y")
+#' }
+#'
+clean_merged_table <- function(df_merged, keep = c("x", "y")){
+
+  merged_pattern <- map(c("ends_with_pattern", "extract_pattern"),
+                        ~ obtain_regex(pattern =
+                                         obtain_regex(pattern = c("x", "y"),
+                                                      return_regex = "or"),
+                                       return_regex = .x))
+
+  variables_pattern <- map(c("x", "y"),
+                           ~ obtain_regex(pattern = .x,
+                                          return_regex = "contains_pattern")
+  ) %>% set_names("x", "y")
+
+  duplicated <- str_subset(string = names(df_merged),
+                           pattern = pluck(merged_pattern, 1))
+
+  if(length(duplicated) > 0){
+    not_duplicated <-
+      str_subset(string = names(df_merged),
+                 pattern = obtain_regex(pattern = pluck(merged_pattern, 1),
+                                        return_regex = "not_contains_pattern")
+      )
+    variables <- map(c("x", "y"),
+                     ~str_subset(string = duplicated,
+                                 pattern = pluck(variables_pattern, ..1))) %>%
+      set_names(c("x", "y")) %>% pluck(keep)
+
+    clean_variables <- str_remove_all(string = variables,
+                                      pattern = pluck(merged_pattern, 2))
+
+    result <- df_merged[,not_duplicated %>% append(variables), with = FALSE]
+    result <- result %>% setnames(old = variables,
+                                  new = str_remove_all(string = variables,
+                                                       pattern = pluck(merged_pattern, 2)))
+  }else result <- "The merged dataset does not have duplicated variables."
+  result
 }

@@ -4,23 +4,33 @@
 \alias{iterative_merge}
 \title{iterative_merge}
 \usage{
-iterative_merge(dfs_list, key, ...)
+iterative_merge(dfs_list, key, keep = NULL, ...)
 }
 \arguments{
 \item{dfs_list}{list of datasets}
 
-\item{key}{join ID}
+\item{key}{join IDs}
+
+\item{keep}{argument that indicate if you want to get .x variables or .y variables}
 
 \item{...}{additional parameters of merge}
 }
 \value{
-This function returns a merged dataset of all the datasets from \code{dfs_list}
+"This function returns a merged dataset of all datasets from \code{dfs_list} with \emph{different results} based on \code{keep} argument:"
+\itemize{
+\item If \code{keep is NULL} return the merged dataset without cleaning the duplicated variables after merging.
+\item If \code{keep = "x"} return the dataset with the no duplicated variables and the duplicated old variables without the extension .x
+\item If \code{keep = "y"} return the dataset with the no duplicated variables and the duplicated new variables without the extension .y
+}
 }
 \description{
 Merge a list of datasets
 }
 \details{
-This function allows you to make any type of merge of different datasets withing a list.
+This function allows you to make any type of merge of different datasets withing a list unifying the ID variable and cleaning duplicated variables.
+}
+\note{
+The {keys argument} ids of each dataset is going to be renamed as \emph{ID}, with the intention that the merge works with the variables with name \emph{ID}
 }
 \author{
 Eduardo Trujillo

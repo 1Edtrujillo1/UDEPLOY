@@ -565,7 +565,7 @@ iterative_merge <- function(dfs_list, key, keep = NULL, ...){
   }else{
     check <- clean_merged_table(df_merged = df_merged, keep = keep)
     if(is.character(check)){
-      result <- clean_merged_table(df_merged = df_merged)
+      result <- df_merged
     }else{result <- check}
   }
   result

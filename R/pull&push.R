@@ -528,7 +528,11 @@ sql_manipulation <- function(dsn = NULL, server = NULL,
 #' }
 #' @export
 #'
-#' @note The {keys argument} ids of each dataset is going to be renamed as _ID_, with the intention that the merge works with the variables with name _ID_
+#' @note
+#'\itemize{
+#'   \item The {keys argument} ids of each dataset is going to be renamed as _ID_, with the intention that the merge works with the variables with name _ID_
+#'   \item If you select the \code{keep} argument and there is no duplicated variables, then it will ignore that argument.
+#' }
 #'
 #' @example
 #'df1 <- data.table(id = c(1, 5, 7, 5),
@@ -558,8 +562,12 @@ iterative_merge <- function(dfs_list, key, keep = NULL, ...){
 
   if(is.null(keep)){
     result <- df_merged
-  }else{result <- clean_merged_table(df_merged = df_merged, keep = keep)}
-
+  }else{
+    check <- clean_merged_table(df_merged = df_merged, keep = keep)
+    if(is.character(check)){
+      result <- check
+    }else{result <- clean_merged_table(df_merged = df_merged)}
+  }
   result
 }
 

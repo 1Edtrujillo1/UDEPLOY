@@ -30,7 +30,10 @@ Merge a list of datasets
 This function allows you to make any type of merge of different datasets withing a list unifying the ID variable and cleaning duplicated variables.
 }
 \note{
-The {keys argument} ids of each dataset is going to be renamed as \emph{ID}, with the intention that the merge works with the variables with name \emph{ID}
+\itemize{
+\item The {keys argument} ids of each dataset is going to be renamed as \emph{ID}, with the intention that the merge works with the variables with name \emph{ID}
+\item If you select the \code{keep} argument and there is no duplicated variables, then it will ignore that argument.
+}
 }
 \author{
 Eduardo Trujillo

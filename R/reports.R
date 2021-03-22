@@ -1,3 +1,5 @@
+# DATES INFORMATION -------------------------------------------------------
+
 #' year_month
 #'
 #' Return a vector of possible years, or possible months in a year.
@@ -97,4 +99,102 @@ year_month <- function(df, select_year, select_month = NULL, previous = FALSE){
     }
     result
   }, error = function(e) "You do not have any Date variable in your dataset")
+}
+
+#' semester_quarter
+#'
+#' Return a vector of possible semesters or quarters in a year.
+#'
+#' This function allows you to return a vector of observations from a semester or quarter of a year (or the previous year)
+#'
+#' @param df dataset to obtain the dates
+#' @param year year that we want to obtain the vector
+#' @param previous If we want to obtain the semester or quarter from the previous year
+#' @param semester Number of the semester that we want to obtain the vector 1:2
+#' @param quarter Number of the quarter that we want to obtain the vector 1:4
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFROM lubridate year
+#' @importFROM purrr map set_names pluck map2 detect_index keep
+#' @importFROM stringr str_to_upper str_glue
+#'
+#' @return
+#' "This function returns *different results* based on the arguments \code{select_year}, \code{select_month} & \code{previous}".
+#' \itemize{
+#'   \item If \code{previous = FALSE} and \code{semester} return a vector of observations of that semester of the year \code{select_year} in the date variable.
+#'   \item If \code{previous = TRUE} and  \code{semester} return a vector of observations of that semester of the previous year \code{select_year} in the date variable.
+#'   \item If \code{previous = FALSE} and \code{quarter} return a vector of observations of that quarter of the year \code{select_year} in the date variable.
+#'   \item If \code{previous = TRUE} and  \code{quarter} return a vector of observations of that quarter of the previous year \code{select_year} in the date variable.
+#' }
+#' @export
+#'
+#' @note
+#'\itemize{
+#'   \item If \code{semester} and \code{quarter} are selected both, then return a string message.
+#'   \item If there is something wrong with the \code{year} and/or \code{previous} option defined in the firm, then return a string message.
+#'   \item If there is no dates in the \code{semester} or \code{quarter} defined, then return a string message.
+#'  }
+#'
+#' @example
+#' \dontrun{
+#' *select semester 2 actual year*
+#' semester_quarter(df = df, year = 2018, semester = 2)
+#' *select semester 2 of the previous year (2017)*
+#' semester_quarter(df = df, year = 2018, semester = 2, previous = TRUE)
+#'
+#' *select quarter 4 actual year*
+#' semester_quarter(df = df, year = 2018, quarter = 4)
+#' *select quarter 4 of the previous year (2017)*
+#' semester_quarter(df = df, year = 2018, quarter = 4, previous = TRUE)
+#'
+#' *List of the 4th. quarter in many years year*
+#' map(c(2018,2019,2020), ~semester_quarter(df = df, year = .x, quarter = 4))
+#' }
+#'
+semester_quarter <- function(df, year, previous = FALSE,
+                             semester = NULL, quarter = NULL){
+  tryCatch({
+    if(isFALSE(!is.null(semester) & !is.null(quarter))){
+
+      date_variable <- map(c(TRUE, FALSE),
+                           ~ year_month(df = df, select_year = year, previous = .x) %>%
+                             unique()) %>%
+        set_names(TRUE, FALSE) %>%
+        pluck(shQuote(previous, type = "cmd2"))
+
+      result <- tryCatch({
+        if(!is.character(date_variable)){
+          months <- 1:12 %>% set_names(format(x = ISOdate(year = Sys.Date() %>% year(),
+                                                          month = 1:12,
+                                                          day = 1),
+                                              format = "%B") %>% str_to_upper())
+          result <- map2(list(list(1:6, 7:12),
+                              list(1:3, 4:6, 7:9, 10:12)),
+                         list(1:2, 1:4),
+                         ~map(.x, function(i){
+                           map(months[i], ~ year_month(df = df,
+                                                       select_year = date_variable,
+                                                       select_month = ..1,
+                                                       previous = FALSE))
+                         }) %>% set_names(.y)
+          ) %>% set_names("semester", "quarter")
+
+          filter_parameter <- list(semester,quarter) %>%
+            set_names("semester","quarter")
+          filter_parameter <- filter_parameter[detect_index(filter_parameter,
+                                                            ~!is.null(.x))]
+
+          result <- result %>% pluck(names(filter_parameter)) %>%
+            pluck(unlist(filter_parameter)) %>% keep(~!is.character(.x)) %>%
+            do.call(what = "c", args = .) %>% unname()
+
+          if(is.null(result)){result <- str_glue("No dates in the year {date_variable}")}
+        }
+        result
+      }, error = function(e) date_variable)
+    }
+    result
+  }, error = function(e) "Select only a semester or quarter")
 }

@@ -20,17 +20,17 @@ semester_quarter(df, year, previous = FALSE, semester = NULL, quarter = NULL)
 \value{
 "This function returns \emph{different results} based on the arguments \code{select_year}, \code{select_month} & \code{previous}".
 \itemize{
-\item If \code{previous = FALSE} and \code{semester} return a vector of observations of that semester of the year \code{select_year} in the date variable.
-\item If \code{previous = TRUE} and  \code{semester} return a vector of observations of that semester of the previous year \code{select_year} in the date variable.
-\item If \code{previous = FALSE} and \code{quarter} return a vector of observations of that quarter of the year \code{select_year} in the date variable.
-\item If \code{previous = TRUE} and  \code{quarter} return a vector of observations of that quarter of the previous year \code{select_year} in the date variable.
+\item If \code{previous = FALSE} and \code{semester} return a vector of dates of that semester of the year \code{select_year} in the date variable.
+\item If \code{previous = TRUE} and  \code{semester} return a vector of dates of that semester of the previous year \code{select_year} in the date variable.
+\item If \code{previous = FALSE} and \code{quarter} return a vector of dates of that quarter of the year \code{select_year} in the date variable.
+\item If \code{previous = TRUE} and  \code{quarter} return a vector of dates of that quarter of the previous year \code{select_year} in the date variable.
 }
 }
 \description{
-Return a vector of possible semesters or quarters in a year.
+Return a vector of possible dates in a semester or quarter in a year.
 }
 \details{
-This function allows you to return a vector of observations from a semester or quarter of a year (or the previous year)
+This function allows you to return a vector of dates from a semester or quarter of a year (or the previous year)
 }
 \note{
 \itemize{

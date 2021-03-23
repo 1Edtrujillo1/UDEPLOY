@@ -2,9 +2,9 @@
 
 #' year_month
 #'
-#' Return a vector of possible years, or possible months in a year.
+#' Return a vector of possible dates of a years, or dates of a month in a year.
 #'
-#' This function allows you to return a vector of observations from a year (or the previous one) OR observations of a month of a year (or the previous month)
+#' This function allows you to return a vector of dates from a year (or the previous one) OR dates of a month of a year (or the previous month)
 #'
 #' @param df dataset to obtain the dates
 #' @param select_year year that we want to obtain the vector
@@ -21,10 +21,10 @@
 #' @return
 #' "This function returns *different results* based on the arguments \code{select_year}, \code{select_month} & \code{previous}".
 #' \itemize{
-#'   \item If \code{previous = FALSE} and  \code{select_year} return a vector of observations of that year in the date variable.
-#'   \item If \code{previous = TRUE} and  \code{select_year} return a vector of observations of the previous year in the date variable.
-#'   \item If \code{previous = FALSE} and  \code{select_month} return a vector of observations of that month of the year \code{select_year} in the date variable.
-#'   \item If \code{previous = TRUE} and  \code{select_month} return a vector of observations of the previous month year \code{select_year} in the date variable.
+#'   \item If \code{previous = FALSE} and  \code{select_year} return a vector of dates of that year in the date variable.
+#'   \item If \code{previous = TRUE} and  \code{select_year} return a vector of dates of the previous year in the date variable.
+#'   \item If \code{previous = FALSE} and  \code{select_month} return a vector of dates of that month of the year \code{select_year} in the date variable.
+#'   \item If \code{previous = TRUE} and  \code{select_month} return a vector of dates of the previous month year \code{select_year} in the date variable.
 #' }
 #' @export
 #'
@@ -73,7 +73,7 @@ year_month <- function(df, select_year, select_month = NULL, previous = FALSE){
                                               format = "%B") %>% str_to_upper())
           if(is.null(select_month)){
             select_year <- map(list((as.integer(select_year)-1),as.integer(select_year)),
-                               ~ year(date_variable)[year(date_variable) == .x]) %>%
+                               ~ date_variable[year(date_variable) == .x]) %>%
               set_names(TRUE, FALSE) %>% pluck(shQuote(previous, type = "cmd2"))
             if(is.null(select_year)){select_year <- "There is no information on the previous year."}
             result <- select_year
@@ -81,7 +81,7 @@ year_month <- function(df, select_year, select_month = NULL, previous = FALSE){
             filter_year <- date_variable[year(date_variable) == as.integer(select_year)]
 
             filter_month <- map(list(months[months[select_month]-1], months[select_month]),
-                                safely(~month(filter_year)[month(filter_year) == .x])) %>%
+                                safely(~filter_year[month(filter_year) == .x])) %>%
               map("result") %>%
               set_names(TRUE, FALSE)
 
@@ -103,9 +103,9 @@ year_month <- function(df, select_year, select_month = NULL, previous = FALSE){
 
 #' semester_quarter
 #'
-#' Return a vector of possible semesters or quarters in a year.
+#' Return a vector of possible dates in a semester or quarter in a year.
 #'
-#' This function allows you to return a vector of observations from a semester or quarter of a year (or the previous year)
+#' This function allows you to return a vector of dates from a semester or quarter of a year (or the previous year)
 #'
 #' @param df dataset to obtain the dates
 #' @param year year that we want to obtain the vector
@@ -123,10 +123,10 @@ year_month <- function(df, select_year, select_month = NULL, previous = FALSE){
 #' @return
 #' "This function returns *different results* based on the arguments \code{select_year}, \code{select_month} & \code{previous}".
 #' \itemize{
-#'   \item If \code{previous = FALSE} and \code{semester} return a vector of observations of that semester of the year \code{select_year} in the date variable.
-#'   \item If \code{previous = TRUE} and  \code{semester} return a vector of observations of that semester of the previous year \code{select_year} in the date variable.
-#'   \item If \code{previous = FALSE} and \code{quarter} return a vector of observations of that quarter of the year \code{select_year} in the date variable.
-#'   \item If \code{previous = TRUE} and  \code{quarter} return a vector of observations of that quarter of the previous year \code{select_year} in the date variable.
+#'   \item If \code{previous = FALSE} and \code{semester} return a vector of dates of that semester of the year \code{select_year} in the date variable.
+#'   \item If \code{previous = TRUE} and  \code{semester} return a vector of dates of that semester of the previous year \code{select_year} in the date variable.
+#'   \item If \code{previous = FALSE} and \code{quarter} return a vector of dates of that quarter of the year \code{select_year} in the date variable.
+#'   \item If \code{previous = TRUE} and  \code{quarter} return a vector of dates of that quarter of the previous year \code{select_year} in the date variable.
 #' }
 #' @export
 #'
@@ -159,13 +159,14 @@ semester_quarter <- function(df, year, previous = FALSE,
     if(isFALSE(!is.null(semester) & !is.null(quarter))){
 
       date_variable <- map(c(TRUE, FALSE),
-                           ~ year_month(df = df, select_year = year, previous = .x) %>%
-                             unique()) %>%
-        set_names(TRUE, FALSE) %>%
-        pluck(shQuote(previous, type = "cmd2"))
+                           ~ year_month(df = df, select_year = year, previous = .x)) %>%
+        set_names(TRUE, FALSE) %>% pluck(shQuote(previous, type = "cmd2"))
 
       result <- tryCatch({
         if(!is.character(date_variable)){
+
+          date_variable <- date_variable %>% year() %>% unique()
+
           months <- 1:12 %>% set_names(format(x = ISOdate(year = Sys.Date() %>% year(),
                                                           month = 1:12,
                                                           day = 1),

@@ -18,17 +18,17 @@ year_month(df, select_year, select_month = NULL, previous = FALSE)
 \value{
 "This function returns \emph{different results} based on the arguments \code{select_year}, \code{select_month} & \code{previous}".
 \itemize{
-\item If \code{previous = FALSE} and  \code{select_year} return a vector of observations of that year in the date variable.
-\item If \code{previous = TRUE} and  \code{select_year} return a vector of observations of the previous year in the date variable.
-\item If \code{previous = FALSE} and  \code{select_month} return a vector of observations of that month of the year \code{select_year} in the date variable.
-\item If \code{previous = TRUE} and  \code{select_month} return a vector of observations of the previous month year \code{select_year} in the date variable.
+\item If \code{previous = FALSE} and  \code{select_year} return a vector of dates of that year in the date variable.
+\item If \code{previous = TRUE} and  \code{select_year} return a vector of dates of the previous year in the date variable.
+\item If \code{previous = FALSE} and  \code{select_month} return a vector of dates of that month of the year \code{select_year} in the date variable.
+\item If \code{previous = TRUE} and  \code{select_month} return a vector of dates of the previous month year \code{select_year} in the date variable.
 }
 }
 \description{
-Return a vector of possible years, or possible months in a year.
+Return a vector of possible dates of a years, or dates of a month in a year.
 }
 \details{
-This function allows you to return a vector of observations from a year (or the previous one) OR observations of a month of a year (or the previous month)
+This function allows you to return a vector of dates from a year (or the previous one) OR dates of a month of a year (or the previous month)
 }
 \note{
 \itemize{

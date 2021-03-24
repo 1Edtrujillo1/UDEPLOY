@@ -106,7 +106,7 @@ list_vs_df <- function(list, output = c("list_to_dfs", "dfs_to_list")){
           setnames(names(j)[i]) %>%
           .[,ID:=1:.N]
       )
-      iterative_merge(each, key = "ID", all = TRUE) %>%
+      iterative_merge(each, key = "ID", unify_id = TRUE, all = TRUE) %>%
         .[,-"ID"] %>% return()
     })
 

@@ -616,6 +616,7 @@ nas_before_after_outliers <- function(df, factor_vars = NULL){
       }else{
         result <- iterative_merge(dfs_list = each,
                                   key = factor_vars,
+                                  unify_id = TRUE,
                                   all.x = TRUE) %>%
           setnames(old = str_subset(string = names(.),
                                     pattern = obtain_regex(pattern =

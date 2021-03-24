@@ -511,7 +511,8 @@ sql_manipulation <- function(dsn = NULL, server = NULL,
 #'
 #' @param dfs_list list of datasets
 #' @param key join IDs
-#' @param keep argument that indicate if you want to get .x variables or .y variables
+#' @param unify_id argument that indicates if the same ID has a different name in each table
+#' @param keep argument that indicates if you want to get .x variables or .y variables
 #' @param ... additional parameters of merge
 #'
 #' @author Eduardo Trujillo
@@ -530,7 +531,7 @@ sql_manipulation <- function(dsn = NULL, server = NULL,
 #'
 #' @note
 #'\itemize{
-#'   \item The {keys argument} ids of each dataset is going to be renamed as _ID_, with the intention that the merge works with the variables with name _ID_
+#'   \item If \code{unify_id = TRUE}, the {keys argument} ids of each dataset is going to be renamed as _ID_, with the intention that the merge works with the variables with name _ID_ (only if is the same ID with different name in each)
 #'   \item If you select the \code{keep} argument and there is no duplicated variables, then it will ignore that argument.
 #' }
 #'
@@ -543,21 +544,24 @@ sql_manipulation <- function(dsn = NULL, server = NULL,
 #'                  llave = c(1, 4, 3, 2, 5))
 #'
 #' # *final dataset with duplicated variables*
-#' iterative_merge(dfs_list = list(df1, df2), key = c("id", "reference"))
+#' iterative_merge(dfs_list = list(df1, df2), key = c("id", "reference"), unify_id = TRUE)
 #' # *keep x*
-#' iterative_merge(dfs_list = list(df1, df2), key = c("id", "reference"), keep = "x")
+#' iterative_merge(dfs_list = list(df1, df2), key = c("id", "reference"), unify_id = TRUE, keep = "x")
 #' # *keep y*
-#' iterative_merge(dfs_list = list(df1, df2), key = c("id", "reference"),keep = "y")
+#' iterative_merge(dfs_list = list(df1, df2), key = c("id", "reference"), unify_id = TRUE, keep = "y")
 #' # *unique key id*
 #' iterative_merge(dfs_list = list(data.table(a=rep(1:2,each=3), b=1:6, key="a,b"),
 #'                                 data.table(a=0:1, bb=10:11, key="a")),
 #'                 key = "a")
 #'
-iterative_merge <- function(dfs_list, key, keep = NULL, ...){
+iterative_merge <- function(dfs_list, key, unify_id = FALSE, keep = NULL, ...){
 
-  dfs_list <- map2(copy(dfs_list), key, ~ setnames(x = .x, old = .y, new = "ID"))
+  if(unify_id){
+    dfs_list <- map2(copy(dfs_list), key, ~ setnames(x = .x, old = .y, new = "ID"))
+    key <- "ID"
+  }
 
-  df_merged <- Reduce(function(x,y) merge.data.table(x, y, by = "ID", ...),
+  df_merged <- Reduce(function(x,y) merge.data.table(x, y, by = key, ...),
                       x = dfs_list)
 
   if(is.null(keep)){

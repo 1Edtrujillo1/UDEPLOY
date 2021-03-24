@@ -4,14 +4,16 @@
 \alias{iterative_merge}
 \title{iterative_merge}
 \usage{
-iterative_merge(dfs_list, key, keep = NULL, ...)
+iterative_merge(dfs_list, key, unify_id = FALSE, keep = NULL, ...)
 }
 \arguments{
 \item{dfs_list}{list of datasets}
 
 \item{key}{join IDs}
 
-\item{keep}{argument that indicate if you want to get .x variables or .y variables}
+\item{unify_id}{argument that indicates if the same ID has a different name in each table}
+
+\item{keep}{argument that indicates if you want to get .x variables or .y variables}
 
 \item{...}{additional parameters of merge}
 }
@@ -31,7 +33,7 @@ This function allows you to make any type of merge of different datasets withing
 }
 \note{
 \itemize{
-\item The {keys argument} ids of each dataset is going to be renamed as \emph{ID}, with the intention that the merge works with the variables with name \emph{ID}
+\item If \code{unify_id = TRUE}, the {keys argument} ids of each dataset is going to be renamed as \emph{ID}, with the intention that the merge works with the variables with name \emph{ID} (only if is the same ID with different name in each)
 \item If you select the \code{keep} argument and there is no duplicated variables, then it will ignore that argument.
 }
 }

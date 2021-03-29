@@ -1,3 +1,70 @@
+
+# REPORT CREATION ---------------------------------------------------------
+
+
+#' report_NumInVar
+#'
+#' Create a summary and a grouped dataset from the orignal dataframe.
+#'
+#' This function allows you to obtain a summary and a grouped dataset from the orignal dataframe
+#'
+#' @param day vector of filter dates on the \code{date_variable}
+#' @param df dataset to obtain the report
+#' @param date_variable string that represent variable´s name of data type date
+#' @param num_int_var string that represent variable´s name of data type numeric or integer
+#' @param factor_variable string that represent variable´s name of data type factor
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFROM purrr map set_names
+#' @importFROM stringr str_subset str_c
+#'
+#' @return This function return a list with two datasets selecting only specific \code{day}´s from the \code{date_variable}, where is going to be a summary of all the numeric and integer variables and other containing a grouped dataset
+#'
+#' @note
+#'\itemize{
+#'   \item If the \code{day} is all the observations from \code{date_variable}, this means that we are creating historical summary and historical grouped dataset.
+#'   \item The variables created on the summary are N:= number of observations per group, SUM:= total of observations per group, PERCENT:= participation percentage of each group from each numeric and integer variable
+#'  }
+#'
+#' @example
+#' \dontrun{
+#' report_NumInVar(day = date_info,
+#'                 df = df,
+#'                 date_variable = date_variable,
+#'                 num_int_var = num_int_var,
+#'                 factor_variable = factor_variable)
+#'
+#' }
+#'
+report_NumInVar <- function(day, df, date_variable, num_int_var, factor_variable){
+  each_numeric <- map(num_int_var, function(i){
+    each <- copy(df)[eval(parse(text = date_variable)) %in% day,
+                     c(factor_variable, i), with = FALSE]
+    list(NOT_SUMMARY = each,
+         SUMMARY = each[,.(.N,
+                           sum(eval(parse(text = i)), na.rm = TRUE),
+                           sum(eval(parse(text = i)), na.rm = TRUE)/
+                             sum(each[,eval(parse(text = i))], na.rm = TRUE)),
+                        by = factor_variable] %>%
+           setnames(
+             old = str_subset(string = names(.),
+                              pattern = obtain_regex(pattern = factor_variable,
+                                                     return_regex = "not_contains_pattern")),
+             new = str_c(i, c('N','SUM','PERCENT'), sep = ".")
+           )
+    )
+  }) %>% set_names(num_int_var)
+
+  list(
+    NOT_SUMMARY = map(each_numeric, "NOT_SUMMARY") %>% unname() %>%
+      cbind.data.frame() %>% data.table() %>%
+      .[,unique(names(.)), with = FALSE],
+    SUMMARY = map(each_numeric, "SUMMARY") %>% iterative_merge(key = factor_variable)
+  )
+}
+
 # DATES INFORMATION -------------------------------------------------------
 
 #' year_month

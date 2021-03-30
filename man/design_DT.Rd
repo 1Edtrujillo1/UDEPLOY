@@ -4,7 +4,7 @@
 \alias{design_DT}
 \title{design_DT}
 \usage{
-design_DT(df, style = "bootstrap", extra_options = NULL, ...)
+design_DT(df, style = "bootstrap", extra_options = NULL, convert = FALSE, ...)
 }
 \arguments{
 \item{df}{dataset to make the design}
@@ -13,10 +13,17 @@ design_DT(df, style = "bootstrap", extra_options = NULL, ...)
 
 \item{extra_options}{\emph{list} of additional \strong{options} arguments}
 
+\item{convert}{convert a dataset to datatable}
+
 \item{...}{extra arguments in \code{datatable}}
 }
 \value{
 The dataset in DT format.
+"This function returns two possible results based on \code{convert} parameter:"
+\itemize{
+\item If \code{convert = TRUE} transform a dataset not of the form data.table or data.frame to datatable (form like formattable) (DT format)
+\item If \code{convert = FALSE} transform a data.table or a data.fram to datatable (DT format)
+}
 }
 \description{
 Visualize a dataset in a JS format.

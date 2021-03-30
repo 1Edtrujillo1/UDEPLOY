@@ -133,6 +133,7 @@ list_vs_df <- function(list, output = c("list_to_dfs", "dfs_to_list")){
 #' @param df dataset to make the design
 #' @param style theme of the datatable
 #' @param extra_options *list* of additional **options** arguments
+#' @param convert convert a dataset to datatable
 #' @param ... extra arguments in \code{datatable}
 #'
 #' @author Eduardo Trujillo
@@ -140,6 +141,11 @@ list_vs_df <- function(list, output = c("list_to_dfs", "dfs_to_list")){
 #' @importFROM DT datatable
 #'
 #' @return The dataset in DT format.
+#' "This function returns two possible results based on \code{convert} parameter:"
+#' \itemize{
+#'   \item If \code{convert = TRUE} transform a dataset not of the form data.table or data.frame to datatable (form like formattable) (DT format)
+#'   \item If \code{convert = FALSE} transform a data.table or a data.fram to datatable (DT format)
+#' }
 #' @export
 #'
 #' @example
@@ -147,12 +153,24 @@ list_vs_df <- function(list, output = c("list_to_dfs", "dfs_to_list")){
 #' desing_DT(df = dataset)
 #' }
 #'
-design_DT <- function(df, style = 'bootstrap', extra_options = NULL, ...){
-  datatable(data = df,
+design_DT <- function(df, style = 'bootstrap',
+                      extra_options = NULL, convert = FALSE, ...){
+
+  if(convert){
+    func <- as.datatable
+    data_parameter <- list(x = df)
+
+  }else{
+    func <- datatable
+    data_parameter <- list(data = df)
+  }
+
+  do.call(what = func,
+          args = list(
             style = style,
             filter = list(position = 'top', clear = FALSE),
             options = list(autoWidth = TRUE) %>% append(extra_options),
-            ...) %>%
-    return()
+            ...
+          ) %>% append(data_parameter)
+  ) %>% return()
 }
-

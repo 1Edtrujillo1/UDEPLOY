@@ -1,6 +1,233 @@
 
 # REPORT CREATION ---------------------------------------------------------
 
+#' report_creator
+#'
+#' Create a periodical or historical summary or grouped dataset.
+#'
+#' This function allows you to return a periodical or historical summary or grouped dataset from the orignal dataframe
+#'
+#' @param df dataset to obtain the report
+#' @param year year that we want to obtain the report
+#' @param select_month name of the month of the year that we want to obtain the report
+#' @param select_semester Number of the semester that we want to obtain the report 1:2
+#' @param select_quarter Number of the quarter that we want to obtain the report 1:4
+#' @param summary Type of report we want to obtain.
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFROM purrr map map_int pluck set_names keep map2 walk2
+#' @importFROM stringr str_subset str_glue
+#'
+#' @return
+#' "This function returns *different results* based on the arguments \code{summary} argument".
+#' \itemize{
+#'   \item If \code{summary = "SUMMARY"}, then return a historical or periodical summary.
+#'   \item If \code{summary = "NOT_SUMMARY"}, then return a historical or periodical grouped dataset.
+#' }
+#' @export
+#'
+#' @note
+#'\itemize{
+#'   \item If you do not select periodicity (any argument: \code{year, select_month, select_semester, select_quarter} ) then you are bringing a historical information.
+#'   \item If you select more than one periodical arguments (\code{select_month, select_semester, select_quarter} ), it will return a string message, since the report is according to a specific period of time.
+#'   \item If you do not have a date variable in your dataset, then will return a string message.
+#'   \item A summary means the comparison between a selected period and the previous one, and if there is not previous period or actual period then return the summary of the period that has information.
+#'   \item If there is previous and actual periocity and we select to return a grouped dataset, then will return the present grouped dataset, and if there is not previous period or actual period then return the grouped dataset of the period that has information.
+#'  }
+#'
+#' @example
+#' \dontrun{
+#' rm(date_info)
+#'
+#' *ERROR STRING MESSAGE:*
+#' - Selecting multiples parameters
+#' date_info <- report_creator(df = df, year = 2019, select_month = "OCTOBER", select_semester = 2, summary = "SUMMARY")
+#' - not having date variable
+#' date_info <- report_creator(df = df[,-"DATE"], year = 2019, select_month = "OCTOBER")
+#'
+#' *HISTORICAL:*
+#'
+#' _SUMMARY_
+#' date_info <- report_creator(df = df, summary = "SUMMARY")
+#'
+#' _NOT SUMMARY_
+#' date_info <- report_creator(df = df, summary = "NOT_SUMMARY")
+#'
+#' *PERIODICAL:*
+#'
+#' _SUMMARY_
+#' - PRESENT AND PAST INFORMATION
+#' date_info <- report_creator(df = df, year = 2019, select_quarter = 4, summary = "SUMMARY")
+#' - PRESENT INFORMATION
+#' date_info <- report_creator(df = df, year = 2018, select_quarter = 4, summary = "SUMMARY")
+#' - PAST INFORMATION
+#' date_info <- report_creator(df = df, year = 2020, select_quarter = 4, summary = "SUMMARY")
+#'
+#' _NOT SUMMARY_
+#' - PRESENT AND PAST INFORMATION
+#' date_info <- report_creator(df = df, year = 2019, select_quarter = 4, summary = "NOT_SUMMARY")
+#' - PRESENT INFORMATION
+#' date_info <- report_creator(df = df, year = 2018, select_quarter = 4, summary = "NOT_SUMMARY")
+#' - PAST INFORMATION
+#' date_info <- report_creator(df = df, year = 2020, select_quarter = 4, summary = "NOT_SUMMARY")
+#' }
+#'
+report_creator <- function(df, year = NULL, select_month = NULL,
+                           select_semester = NULL, select_quarter = NULL,
+                           summary = c("SUMMARY", "NOT_SUMMARY")){
+
+  date_variable <- classes_vector(data_type = "Date", df = df)
+  date_info <- tryCatch({
+    if(length(date_variable) != 0){
+      if(!is.null(year)){
+        enter_condition <- map(list(str_subset(string = formalArgs(report_creator),
+                                               pattern = obtain_regex(pattern = c("year", "select"),
+                                                                      return_regex = "or")),
+                                    str_subset(string = formalArgs(report_creator),
+                                               pattern = "select")),
+                               function(i){
+                                 map_int(i, ~ !is.null(eval(parse(text = .x))))
+                               })
+        # date information
+        date_info <- tryCatch({
+          if(pluck(enter_condition, 1) %>% sum() <= 2){
+            select_arguments <- str_subset(string = formalArgs(report_creator),
+                                           pattern = "select")
+            select_argument <- tryCatch({
+              if(pluck(enter_condition, 2) %>% sum() == 1){
+                select_argument <- map(select_arguments ,~ eval(parse(text = .x))) %>%
+                  set_names(select_arguments) %>% keep(~!is.null(.x)) %>% names()
+              }
+              select_argument
+            }, error = function(e) "year")
+
+            date_info <- map(list(NULL, select_month), function(i){
+              map(c(FALSE, TRUE),
+                  ~ year_month(df = df,
+                               select_year = year,
+                               select_month = i,
+                               previous = .x)) %>%
+                set_names("PRESENT", "PAST")
+            }) %>%
+              append(
+                map2(list(select_semester, NULL),
+                     list(NULL, select_quarter), function(semester, quarter){
+                       map(c(FALSE, TRUE),
+                           ~ semester_quarter(df = df,
+                                              year = year,
+                                              semester = semester,
+                                              quarter = quarter,
+                                              previous = .x)) %>%
+                         set_names("PRESENT", "PAST")
+                     })
+              ) %>% set_names("year", select_arguments) %>%
+              pluck(select_argument)
+          }
+          date_info
+        }, error = function(e) "Select only a Month or Semester or Quarter")
+      }else{
+        date_info <- df[,eval(parse(text = date_variable))]
+      }
+      date_info
+    }
+    date_info
+  }, error = function(e) "You do not have any Date variable in your dataset")
+
+  factor_variable <- classes_vector(data_type = "factor", df = df)
+  num_int_var <- classes_vector(data_type = c("integer", "numeric"),  df = df)
+
+  final_report <- tryCatch({
+    if(!is.character(date_info)){
+      report_info <- function(date_info){
+        args <- str_subset(string = formalArgs(report_NumInVar),
+                           pattern = obtain_regex(pattern = "day",
+                                                  return_regex = "not_contains_pattern")
+        )
+        do.call(what = report_NumInVar,
+                args = map(args, ~eval(parse(text = .x))) %>%
+                  set_names(args) %>%
+                  append(list(day = date_info)))
+      }
+      report_info <- map(list(function(date_info){map(date_info, ~ report_info(.x))},
+                              report_info),
+                         ~ do.call(what = ..1, args = list(date_info))
+      ) %>% set_names("PERIODICAL", "HISTORICAL")
+
+      final_report <- tryCatch({
+        if(length(date_info) != df[,.N]){
+          present_past_report <- pluck(report_info, "PERIODICAL") %>% map(summary)
+
+          final_report <- tryCatch({
+            if(any(map(present_past_report, ~.x[,.N] !=0))){
+              if(summary == "SUMMARY"){
+                identify_vars <- str_subset(string = names(present_past_report %>%
+                                                             keep(~.x[,.N]!=0) %>% pluck(1)),
+                                            pattern = obtain_regex(pattern = factor_variable,
+                                                                   return_regex = "not_contains_pattern"))
+
+                present_past_report_merged <- present_past_report %>%
+                  iterative_merge(key = factor_variable, suffixes = c(".present", ".past"))
+
+                final_report <- tryCatch({
+                  if(present_past_report_merged[,.N] != 0){
+
+                    walk2(str_glue("{identify_vars}.dif"),
+                          map(identify_vars, ~ str_subset(string = names(present_past_report_merged),
+                                                          pattern = .x) %>% set_names("present", "past")),
+                          ~ present_past_report_merged[,(.x):=(eval(parse(text = .y["present"]))-
+                                                                 eval(parse(text = .y["past"])))]
+                    )
+                    present_past_report_merged <-
+                      present_past_report_merged[,
+                                                 str_subset(string = names(present_past_report_merged),
+                                                            pattern = obtain_regex(pattern = ".past",
+                                                                                   return_regex = "not_contains_pattern"))
+                                                 , with = FALSE] %>%
+                      setnames(old = str_subset(string = names(.),
+                                                pattern = obtain_regex(pattern = ".present",
+                                                                       return_regex = "contains_pattern")),
+                               new = identify_vars)
+                    final_report <- present_past_report_merged
+                  }
+                  final_report
+                }, error = function(e){
+                  result_correct <- present_past_report %>% keep(~ copy(.x)[,.N]!=0)
+                  final_report <- result_correct %>% pluck(1) %>%
+                    setnames(old = identify_vars, new =
+                               str_glue("{identify_vars}.{names(result_correct)}"))
+                  final_report
+                })
+              }else if(summary == "NOT_SUMMARY"){
+                final_report <- tryCatch({
+                  if(all(map(present_past_report, ~.x[,.N] !=0))){
+                    final_report <- pluck(present_past_report, "PRESENT") %>%
+                      setnames(old = names(.), new = str_glue("{names(.)}.PRESENT"))
+                  }
+                  final_report
+                }, error = function(e){
+                  result_correct <- present_past_report %>% keep(~ copy(.x)[,.N]!=0)
+                  final_report <- result_correct %>% pluck(1) %>%
+                    setnames(old = names(.), new =
+                               str_glue("{names(.)}.{names(result_correct)}"))
+                  final_report
+                })
+              }
+            }
+            final_report
+          }, error = function(e) "You do not have any information in that period")
+        }
+        final_report
+      }, error = function(e) pluck(report_info, "HISTORICAL", summary)%>%
+        setnames(old = names(.), new = str_glue("{names(.)}.{summary}"))
+      )
+    }
+    final_report
+  }, error = function(e) date_info)
+  final_report
+}
+
 
 #' report_NumInVar
 #'

@@ -138,12 +138,13 @@ list_vs_df <- function(list, output = c("list_to_dfs", "dfs_to_list")){
 #'
 #' @author Eduardo Trujillo
 #'
+#' @importFROM formattable as.datatable
 #' @importFROM DT datatable
 #'
 #' @return The dataset in DT format.
 #' "This function returns two possible results based on \code{convert} parameter:"
 #' \itemize{
-#'   \item If \code{convert = TRUE} transform a dataset not of the form data.table or data.frame to datatable (form like formattable) (DT format)
+#'   \item If \code{convert = TRUE} transform a formattable to datatable DT format
 #'   \item If \code{convert = FALSE} transform a data.table or a data.fram to datatable (DT format)
 #' }
 #' @export

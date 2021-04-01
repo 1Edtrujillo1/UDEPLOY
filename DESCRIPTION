@@ -36,4 +36,7 @@ Imports:
 Suggests: 
     DBI,
     odbc,
-    aws.s3
+    aws.s3,
+    htmlwidgets,
+    sparkline,
+    formattable

@@ -1,4 +1,221 @@
 
+# DESIGN REPORT CREATEOR --------------------------------------------------
+
+#' design_report_creator
+#'
+#' Create a periodical or historical designed-summary or designed-grouped dataset or sparklines from a grouped dataset.
+#'
+#' This function allows you to return a periodical or historical designed-summary or designed-grouped dataset or sparklines for a grouped dataset from the orignal dataframe.
+#'
+#' @param df dataset to obtain the report
+#' @param year year that we want to obtain the report
+#' @param select_month name of the month of the year that we want to obtain the report
+#' @param select_semester Number of the semester that we want to obtain the report 1:2
+#' @param select_quarter Number of the quarter that we want to obtain the report 1:4
+#' @param summary Type of report we want to obtain.
+#' @param sparklines Type of design we want for our report
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFROM purrr map pluck set_names walk2 keep discard flatten_chr walk map2 flatten
+#' @importFROM stringr str_c str_subset
+#' @importFROM htmltools as.tags
+#' @importFROM sparkline sparkline spk_add_deps
+#' @importFROM htmlwidgets JS
+#' @importFROM DT formatStyle
+#' @importFROM formattable percent accounting formattable formatter color_tile color_bar style icontext
+#'
+#' @return
+#' "This function returns *different results* based on the arguments \code{sparklines} argument".
+#' \itemize{
+#'   \item If \code{sparklines = TRUE}, then return sparklines of a grouped dataset.
+#'   \item If \code{sparklines = FALSE}, then return the output of the function \code{report_creator} with a design for each variable
+#' }
+#' @export
+#'
+#' @note
+#'\itemize{
+#'   \item Since we are using the defined function \code{report_creator} the output is going to be the same, but now the report created will have design
+#'   \item If \code{sparklines = TRUE}, then you need to select the option code{summary = "NOT_SUMMARY"}, since it is going to create the sparklines of the distribution of a grouped dataset obtained from the function \code{report_creator}
+#'  }
+#'
+#' @example
+#' \dontrun{
+#' rm(date_info)
+#'
+#' *ERROR STRING MESSAGE:*
+#' - Selecting multiples parameters
+#' date_info <- design_report_creator(df = df, year = 2019, select_month = "OCTOBER", select_semester = 2, summary = "SUMMARY")
+#' - not having date variable
+#' date_info <- design_report_creator(df = df[,-"DATE"], year = 2019, select_month = "OCTOBER")
+#' - Selecting a summary for sparklines
+#' date_info <- design_report_creator(df = df, year = 2019, select_quarter = 4, summary = "SUMMARY", sparklines = TRUE)
+#'
+#' *HISTORICAL:*
+#'
+#' _SUMMARY_ (design dataset)
+#' date_info <- design_report_creator(df = df, summary = "SUMMARY")
+#'
+#' _NOT SUMMARY_
+#' - design dataset
+#' date_info <- design_report_creator(df = df, summary = "NOT_SUMMARY")
+#' - sparklines
+#' date_info <- design_report_creator(df = df, summary = "NOT_SUMMARY", sparklines = TRUE)
+#'
+#' *PERIODICAL:*
+#'
+#' _SUMMARY_ (design dataset)
+#' - PRESENT AND PAST INFORMATION
+#' date_info <- design_report_creator(df = df, year = 2019, select_quarter = 4, summary = "SUMMARY")
+#' - PRESENT INFORMATION
+#' date_info <- design_report_creator(df = df, year = 2018, select_quarter = 4, summary = "SUMMARY")
+#' - PAST INFORMATION
+#' date_info <- design_report_creator(df = df, year = 2020, select_quarter = 4, summary = "SUMMARY")
+#'
+#' _NOT SUMMARY_
+#' - PRESENT AND PAST INFORMATION
+#' -- design dataset
+#' date_info <- design_report_creator(df = df, year = 2019, select_quarter = 4, summary = "NOT_SUMMARY")
+#' -- sparklines
+#' date_info <- design_report_creator(df = df, year = 2019, select_quarter = 4, summary = "NOT_SUMMARY", sparklines = TRUE)
+#' - PRESENT INFORMATION
+#' -- design dataset
+#' date_info <- design_report_creator(df = df, year = 2018, select_quarter = 4, summary = "NOT_SUMMARY")
+#' -- sparklines
+#' date_info <- design_report_creator(df = df, year = 2018, select_quarter = 4, summary = "NOT_SUMMARY", sparklines = TRUE)
+#' - PAST INFORMATION
+#' -- design dataset
+#' date_info <- design_report_creator(df = df, year = 2020, select_quarter = 4, summary = "NOT_SUMMARY")
+#' -- sparklines
+#' date_info <- design_report_creator(df = df, year = 2020, select_quarter = 4, summary = "NOT_SUMMARY", sparklines = TRUE)
+#' }
+#'
+design_report_creator <- function(df, year = NULL, select_month = NULL,
+                                  select_semester = NULL, select_quarter = NULL,
+                                  summary = c("SUMMARY", "NOT_SUMMARY"),
+                                  sparklines = FALSE){
+  df <- report_creator(df = copy(df),
+                       year = year,
+                       select_month = select_month,
+                       select_semester = select_semester,
+                       select_quarter = select_quarter,
+                       summary = summary)
+  design_df <- tryCatch({
+    if(!is.character(df)){
+      factor_variable <- classes_vector(data_type = "factor", df = df)
+      num_int_var <- classes_vector(data_type = c("integer", "numeric"), df = df)
+
+      if(sparklines){
+        design_df <- tryCatch({
+          if(summary == "NOT_SUMMARY"){
+            design_df <- map(num_int_var, function(i){
+
+              each <- df[,c(factor_variable, i), with = FALSE]
+
+              possibilities_each <- each[, .SD[1], by = factor_variable] %>%
+                .[ ,factor_variable, with = FALSE] %>%
+                split(x = ., f = seq(.[, .N]))
+
+              each <- map(possibilities_each, ~ merge(each, .x) %>% pluck(i)) %>%
+                set_names(map(possibilities_each, ~ str_c(.x %>% unique() %>% unlist(),
+                                                          collapse = ",")))
+              walk2(possibilities_each, each,
+                    ~ .x[,(i):=as.character(htmltools::as.tags(sparkline(.y, type = "line")))]
+              )
+              possibilities_each <- possibilities_each %>% rbindlist()
+              possibilities_each
+            }) %>% iterative_merge(key = factor_variable) %>%
+              design_DT(escape = FALSE,
+                        extra_options = list(paging = FALSE,
+                                             fnDrawCallback = htmlwidgets::JS(
+                                               'function(){HTMLWidgets.staticRender();}'), #JS code for the sparklines to allow datatable format
+                                             initComplete = JS("function(settings, json) {",
+                                                               "$(this.api().table().header()).css({'color': '#D3D3D3'});", #design of the names variables changing the color
+                                                               "}")
+                        )) %>% spk_add_deps() %>%
+              formatStyle(names(df), backgroundColor = 'white')
+          }
+          design_df
+        }, error = function(e) "Can not generate sparklines from a summary")
+      }else{
+        percentage_variables <- map(num_int_var, function(i){
+          keep(i,
+               ~ length(keep(df[,eval(parse(text = i))], ~ -1<=.x & .x<=1)) ==
+                 df[,length(eval(parse(text = i)))]
+          )
+        }) %>% discard(~length(.x) == 0) %>% flatten_chr()
+
+        not_percentage_variables <-  tryCatch({
+          if(length(percentage_variables) != 0){
+            not_percentage_variables <-
+              str_subset(string = num_int_var,
+                         pattern = obtain_regex(pattern = obtain_regex(pattern = percentage_variables,
+                                                                       return_regex = "or"),
+                                                return_regex = "not_contains_pattern"))
+          }
+          not_percentage_variables
+        }, error = function(e) num_int_var)
+
+        walk2(list(percentage_variables, not_percentage_variables),
+              list(percent, accounting), function(i, fun){
+                walk(i, ~ df[,(.x):= fun(x = eval(parse(text = .x)),
+                                         format = "f")])
+              })
+        partition <- map(list(percentage_variables, not_percentage_variables),
+                         function(i){
+                           map(c( "not_contains_pattern","contains_pattern"),
+                               ~ str_subset(string = i,
+                                            pattern = obtain_regex(pattern = "dif",
+                                                                   return_regex = .x))
+                           ) %>% set_names("PRINCIPAL", "RESULT")
+                         }) %>% set_names("PERCENT", "NOT_PERCENT")
+        design_df <-
+          design_DT(
+            df =
+              formattable(df,
+                          list_of_lists(no_sublists = length(factor_variable),
+                                        element_sublists =
+                                          formatter("span",
+                                                    style = ~ style(color = "grey",
+                                                                    font.weight = "bold"))) %>%
+                            set_names(factor_variable) %>%
+                            append(
+                              map2(map(c("PRINCIPAL", "RESULT"), ~ map(partition, .x)),
+                                   list(map2(c("white", "lightpink"),
+                                             c("orange", "lightblue"),
+                                             ~ color_tile(.x, .y)),
+                                        list(formatter("span",
+                                                       style = x ~ style(font.weight = "bold",
+                                                                         color = ifelse(x > 0,
+                                                                                        "#71CA97",
+                                                                                        ifelse(x < 0,
+                                                                                               "#ff7f7f", "black"))),
+                                                       x ~ icontext(ifelse(x > 0 ,
+                                                                           "arrow-up",
+                                                                           "arrow-down"), x)),
+                                             color_bar(color = "lightblue",
+                                                       fun = function(x) (x-min(x))/(max(x)-min(x)))
+                                        )
+                                   ), function(i,j){
+                                     map2(i, j,
+                                          ~ list_of_lists(no_sublists = length(..1),
+                                                          element_sublists = ..2) %>%
+                                            set_names(..1)
+                                     )
+                                   }) %>% flatten() %>% flatten()
+                            )
+              ),
+            convert = TRUE) %>%
+          formatStyle(c(percentage_variables,not_percentage_variables), color = 'black',
+                      fontWeight = 'bold', `text-align` = 'center')
+      }
+    }
+    design_df
+  }, error = function(e) df)
+  design_df
+}
+
 # REPORT CREATION ---------------------------------------------------------
 
 #' report_creator

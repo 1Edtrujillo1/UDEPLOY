@@ -1,4 +1,4 @@
-for(i in c("devtools", "purrr", "sodium")){
+for(i in c("devtools", "purrr")){
   install.packages(i)
 }
 

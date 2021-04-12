@@ -3,6 +3,12 @@
 ## TAKE CREATED DOCKER IMAGE
 FROM rocker/shiny-verse:latest
 
+RUN apt-get update -qq \
+    && apt-get -y --no-install-recommends install \
+        libsodium-dev \
+    && install2.r --error --deps TRUE \
+        sodium
+
 ##CREATE FOLDER
 RUN mkdir -p /docker_r_packages
 

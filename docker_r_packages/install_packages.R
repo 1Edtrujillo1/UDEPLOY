@@ -27,5 +27,5 @@ purrr::map(packages_github,
            ~ devtools::install_github(.x, dependencies = FALSE))
 
 
-map(packages, packageVersion) %>%
-  set_names(packages)
+# map(packages, packageVersion) %>%
+#   set_names(packages)

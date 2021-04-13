@@ -175,3 +175,25 @@ design_DT <- function(df, style = 'bootstrap',
           ) %>% append(data_parameter)
   ) %>% return()
 }
+
+# ADDITIONAL --------------------------------------------------------------
+
+#' %between%
+#'
+#' Visualize a close interval from a vector.
+#'
+#' This function allows you to identify a close interval.
+#'
+#' @param x vector
+#' @param rng range of dimension 2
+#'
+#' @author Eduardo Trujillo
+#'
+#' @return Vector of TRUE/FALSE values of where a vector \code{x} is in that particular \code{rng}
+#' @export
+#'
+#' @example
+#' c(4,6,7,9,10,13,15) %between% c(6,9)
+#'
+`%between%` <- function(x,rng) x >= rng[[1]] & x <= rng[[2]]
+

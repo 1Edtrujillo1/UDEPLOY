@@ -195,5 +195,5 @@ design_DT <- function(df, style = 'bootstrap',
 #' @example
 #' c(4,6,7,9,10,13,15) %between% c(6,9)
 #'
-`%between%` <- function(x,rng) x >= rng[[1]] & x <= rng[[2]]
+`%between%` <- function(x,rng) x >= eval(parse(text = rng[[1]])) & x <= eval(parse(text = rng[[2]]))
 

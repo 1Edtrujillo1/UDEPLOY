@@ -176,6 +176,53 @@ design_DT <- function(df, style = 'bootstrap',
   ) %>% return()
 }
 
+#' design_PLOT
+#'
+#' Visualize a plot in a plotly format.
+#'
+#' This function allows you to transform your plot into plotly format (beautiful design).
+#'
+#' @param plot defined ggplot plot
+#' @param font_size letter type of axis and title
+#' @param axis_color color of axis
+#' @param axis_line_color color of line axis
+#'
+#' @author Eduardo Trujillo
+#'
+#' @importFROM ggplot2 element_text element_line theme_minimal theme
+#' @importFROM purrr pmap set_names
+#' @importFROM plotly ggplotly layout
+#'
+#' @return A plot in plotly format.
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' design_PLOT(plot = plot)
+#' }
+#'
+design_PLOT <- function(plot, font_size = "italic",
+                        axis_color = "white", axis_line_color = "red"){
+
+  args <- pmap(list(list(font_size, font_size, NULL, NULL),
+                    list(0.5, NULL, NULL, NULL),
+                    list(NULL, NULL, axis_color, axis_color)),
+               ~ element_text(face = ..1, hjust = ..2, colour = ..3)) %>%
+    set_names("plot.title", "axis.title", "axis.text", "text") %>%
+    append(
+      list_of_lists(no_sublists = 2,
+                    element_sublists = element_line(color = axis_line_color)) %>%
+        set_names("axis.ticks", "axis.line")
+    )
+
+  final_plot <- plot + theme_minimal() +
+    do.call(what = theme, args = args)
+
+  final_plot <- plotly::ggplotly(final_plot) %>%
+    plotly::layout(plot_bgcolor = 'transparent', paper_bgcolor = 'transparent')
+  final_plot
+}
+
 # ADDITIONAL --------------------------------------------------------------
 
 #' interval_between

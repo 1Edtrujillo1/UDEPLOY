@@ -7,7 +7,8 @@ Authors@R:
            role = c("aut", "cre"),
            email = "act.jetv@gmail.com")
 Description: A series of tools for deploy analysis and web-applications..
-Depends: R(>= 3.4.2)
+Depends: 
+    R (>= 3.4.2)
 License: GPL-2
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -39,4 +40,7 @@ Suggests:
     aws.s3,
     htmlwidgets,
     sparkline,
-    formattable
+    formattable,
+    ggplot2
+Enhances: 
+    plotly

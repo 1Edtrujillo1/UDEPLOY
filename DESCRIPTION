@@ -41,6 +41,8 @@ Suggests:
     htmlwidgets,
     sparkline,
     formattable,
-    ggplot2
+    ggplot2,
+    scales,
+    moments
 Enhances: 
     plotly

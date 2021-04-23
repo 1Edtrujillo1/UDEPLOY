@@ -631,7 +631,7 @@ nas_before_after_outliers <- function(df, factor_vars = NULL){
     }
     result %>% setcolorder(c(factor_vars, "NAS_BEFORE", "NAS_AFTER", "CHANGE")) %>%
       return()
-  }) %>% set_names(num_variables) %>% discard(~dim(.x)[1] == 0)
+  }) %>% set_names(num_variables) %>% purrr::discard(~dim(.x)[1] == 0)
 
   NAS_count
 }

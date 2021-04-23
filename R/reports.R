@@ -117,7 +117,10 @@ design_report_creator <- function(df, year = NULL, select_month = NULL,
                 .[ ,factor_variable, with = FALSE] %>%
                 split(x = ., f = seq(.[, .N]))
 
-              each <- map(possibilities_each, ~ merge(each, .x) %>% pluck(i)) %>%
+              each <- map(possibilities_each,
+                          ~ iterative_merge(dfs_list = list(each, .x),
+                                            key = factor_variable)) %>%
+                map(~.x[,eval(parse(text = num_int_var))]) %>%
                 set_names(map(possibilities_each, ~ str_c(.x %>% unique() %>% unlist(),
                                                           collapse = ",")))
               walk2(possibilities_each, each,
@@ -144,7 +147,7 @@ design_report_creator <- function(df, year = NULL, select_month = NULL,
                ~ length(keep(df[,eval(parse(text = i))], ~ -1<=.x & .x<=1)) ==
                  df[,length(eval(parse(text = i)))]
           )
-        }) %>% discard(~length(.x) == 0) %>% flatten_chr()
+        }) %>% purrr::discard(~length(.x) == 0) %>% flatten_chr()
 
         not_percentage_variables <-  tryCatch({
           if(length(percentage_variables) != 0){
@@ -177,8 +180,9 @@ design_report_creator <- function(df, year = NULL, select_month = NULL,
                           list_of_lists(no_sublists = length(factor_variable),
                                         element_sublists =
                                           formatter("span",
-                                                    style = ~ style(color = "grey",
-                                                                    font.weight = "bold"))) %>%
+                                                    style = ~
+                                                      formattable::style(color = "grey",
+                                                                         font.weight = "bold"))) %>%
                             set_names(factor_variable) %>%
                             append(
                               map2(map(c("PRINCIPAL", "RESULT"), ~ map(partition, .x)),
@@ -186,11 +190,12 @@ design_report_creator <- function(df, year = NULL, select_month = NULL,
                                              c("orange", "lightblue"),
                                              ~ color_tile(.x, .y)),
                                         list(formatter("span",
-                                                       style = x ~ style(font.weight = "bold",
-                                                                         color = ifelse(x > 0,
-                                                                                        "#71CA97",
-                                                                                        ifelse(x < 0,
-                                                                                               "#ff7f7f", "black"))),
+                                                       style = x ~
+                                                         formattable::style(font.weight = "bold",
+                                                                            color = ifelse(x > 0,
+                                                                                           "#71CA97",
+                                                                                           ifelse(x < 0,
+                                                                                                  "#ff7f7f", "black"))),
                                                        x ~ icontext(ifelse(x > 0 ,
                                                                            "arrow-up",
                                                                            "arrow-down"), x)),

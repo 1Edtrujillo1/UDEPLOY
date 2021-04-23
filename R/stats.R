@@ -186,7 +186,7 @@ general_descript_stats <- function(df, num_int_var,
                                           function(x1, x2){x1 %in% x2}) %>% unlist(recursive = F)),
                                 function(i, j ,k){
                                   if(k(length(final_mode), i)) str_glue("{j}:{mode_text}")
-                                }) %>% discard(~ is.null(.x)) %>%
+                                }) %>% purrr::discard(~ is.null(.x)) %>%
               ifelse(length(.) != 0, ., "MULTI-MODAL: more than 5 modes") %>% pluck(1)
           }
           final_modes

@@ -46,6 +46,7 @@
 #'\itemize{
 #'   \item Each output is going to be a list, where each element is the result from each combination levels of the factor variables.
 #'   \item It is necessary that the dataset \code{df} contains at least one factor variable.
+#'   \item It is also going to bring the output of the whole distribution of the numeric variable
 #'  }
 #'
 #' @example
@@ -116,7 +117,8 @@ general_descript_stats <- function(df, num_int_var,
         map(~.x[,eval(parse(text = num_int_var))]) %>%
         set_names(map(possibilities_each, ~ str_c(.x %>% unique() %>% unlist(),
                                                   collapse = ","))) %>%
-        map(~ .x[!is.na(.x)])
+        map(~ .x[!is.na(.x)]) %>%
+        append(list(ALL = df[,eval(parse(text = num_int_var))]))
 
       # FREQUENCY, CENTRAL TENDENCY, MODE, DISPERSION FREQUENCY, STATISTICAL COEFFICIENTS
       descriptive_analytics <- map(names(dist_each_fctr_cmbn), function(each_dist){

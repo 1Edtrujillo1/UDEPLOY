@@ -498,9 +498,7 @@ report_NumInVar <- function(day, df, date_variable, num_int_var, factor_variable
                              sum(each[,eval(parse(text = i))], na.rm = TRUE)),
                         by = factor_variable] %>%
            setnames(
-             old = str_subset(string = names(.),
-                              pattern = obtain_regex(pattern = factor_variable,
-                                                     return_regex = "not_contains_pattern")),
+             old = classes_vector(data_type = c("integer", "numeric"),  df = .),
              new = str_c(i, c('N','SUM','PERCENT'), sep = ".")
            )
     )

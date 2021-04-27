@@ -386,11 +386,24 @@ report_creator <- function(df, year = NULL, select_month = NULL,
               if(summary == "SUMMARY"){
                 identify_vars <- str_subset(string = names(present_past_report %>%
                                                              keep(~.x[,.N]!=0) %>% pluck(1)),
-                                            pattern = obtain_regex(pattern = factor_variable,
-                                                                   return_regex = "not_contains_pattern"))
+                                            pattern = classes_vector(data_type = c("integer", "numeric"),
+                                                                     df = present_past_report %>%
+                                                                       keep(~.x[,.N]!=0) %>%
+                                                                       pluck(1)))
 
-                present_past_report_merged <- present_past_report %>%
-                  iterative_merge(key = factor_variable, suffixes = c(".present", ".past"))
+                present_past_report_merged <- tryCatch({
+                  if(length(factor_variable) != 0){
+                    present_past_report_merged <- present_past_report %>%
+                      iterative_merge(key = factor_variable,
+                                      suffixes = c(".present", ".past"))
+                  }
+                  present_past_report_merged
+                }, error = function(e){
+                  map2(copy(present_past_report), c(".present", ".past"),
+                       ~ .x %>% setnames(old = names(.),
+                                         new = str_glue("{names(.)}{.y}"))
+                  ) %>% cbind.data.frame() %>% data.table()
+                })
 
                 final_report <- tryCatch({
                   if(present_past_report_merged[,.N] != 0){

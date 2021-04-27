@@ -8,12 +8,13 @@ packages <- c("shinydashboard", "shinydashboardPlus", "shinyjs",
               "waiter", "jsonlite", "mongolite", "data.table",
               "haven", "readxl", "lubridate", "DT", "DBI", "odbc",
               "aws.s3", "htmlwidgets", "sparkline", "formattable",
-              "ggplot2", "plotly", "moments", "scales")
+              "ggplot2", "plotly", "moments", "scales", "Hmisc")
 
 versions <- c("0.7.1", "0.7.5", "2.0.0", "1.1.2", "0.5.4", "0.5.1.1",
               "0.3.1", "0.2.0", "1.7.2", "2.2.1", "1.13.6", "2.3.1",
               "1.3.1", "1.7.9.2", "0.17", "1.1.0", "1.3.0", "0.3.3",
-              "1.5.3", "2.0", "0.2.1", "3.3.3", "4.9.2.2", "0.14", "1.1.1")
+              "1.5.3", "2.0", "0.2.1", "3.3.3", "4.9.2.2", "0.14", "1.1.1",
+              "4.4.2")
 
 packages_github <- c("nik01010/dashboardthemes", "1Edtrujillo1/udeploy")
 

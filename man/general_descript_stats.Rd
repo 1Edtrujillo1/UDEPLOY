@@ -53,9 +53,8 @@ This function allows you to return different types descriptive statistic analysi
 }
 \note{
 \itemize{
-\item Each output is going to be a list, where each element is the result from each combination levels of the factor variables.
-\item It is necessary that the dataset \code{df} contains at least one factor variable.
-\item It is also going to bring the output of the whole distribution of the numeric variable
+\item Each output is going to be a list, where each element is the result from each combination levels of the factor variables and the whole distribution of the numeric variable.
+\item If there is no factor variable(s) then it is going to bring the calculation of the whole distribution of  \code{num_int_var}
 }
 }
 \author{

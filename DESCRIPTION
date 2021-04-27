@@ -43,6 +43,7 @@ Suggests:
     formattable,
     ggplot2,
     scales,
-    moments
+    moments,
+    Hmisc
 Enhances: 
     plotly

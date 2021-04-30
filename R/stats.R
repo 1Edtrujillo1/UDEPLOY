@@ -18,7 +18,7 @@
 #' @importFROM stringr str_c str_glue str_subset str_split
 #' @importFROM scales percent
 #' @importFROM moments skewness kurtosis
-#' @importFROM ggplot2 ggplot geom_line geom_point labs geom_col geom_text geom_vline geom_segment geom_boxplot geom_jitter geom_errorbar scale_x_discrete theme geom_bar coord_polar theme_minimal element_blank element_rect
+#' @importFROM ggplot2 ggplot geom_line geom_point labs geom_col geom_text geom_vline geom_segment geom_boxplot geom_jitter geom_errorbar scale_x_discrete theme geom_bar coord_polar theme_minimal element_blank element_rect geom_hline
 #' @importFROM dplyr intersect
 #' @importFROM Hmisc cut2
 #'
@@ -296,18 +296,24 @@ general_descript_stats <- function(df, num_int_var,
            y = "CUMULATIVE")
     ogive_plot <- design_PLOT(plot = ogive_plot)
     # Cumulative
-    par(bg = "#2D3741")
-    plot(ecdf(x = descriptive_frequency[,LS]),
-         main = "",
-         xlab = "",
-         ylab = "",
-         col = "blue",
-         bg = "transparent")
-    title("CUMULATIVE DISTRIBUTION FUNCTION", col.main = "white")
-    map(1:2, ~ axis(.x, col = "red", col.ticks = "red"))
-    map2(list(num_int_var, "F(x)"), 1:2,
-         ~ mtext(.x, side = .y, line = 3, col = "white", cex = 1))
-    cumulative_plot <- recordPlot()
+    cumulative_plot <- ggplot(descriptive_frequency, aes(x = LS, y = CUM_FREQUENCY)) +
+      geom_point(color = "blue", shape = 21,
+                 size = 4, fill = "#2fa4e7", alpha = 0.5) +
+      map(c(0, descriptive_frequency[,max(CUM_FREQUENCY)]),
+          ~ geom_hline(aes(yintercept = .x), linetype = 4, col = "red")) +
+      pmap(list(descriptive_frequency[,LS],
+                descriptive_frequency[2:.N, LS] %>% append(
+                  descriptive_frequency[.N,LS] + pluck(boundaries, "bin_size"))) %>%
+             append(list_of_lists(2, descriptive_frequency[,CUM_FREQUENCY])),
+           ~ geom_segment(aes(x = ..1,
+                              xend = ..2,
+                              y = ..3,
+                              yend = ..4),
+                          color = "blue")) +
+      labs(title = "CUMULATIVE DISTRIBUTION FUNCTION",
+           x = num_int_var,
+           y = "F(x)")
+    cumulative_plot <- design_PLOT(plot = cumulative_plot)
     #Histogram
     histogram <- copy(descriptive_frequency)[,XI:=LI + (pluck(boundaries, "bin_size")/2)]
     h <- ggplot(histogram, aes(x = XI, y = FREQUENCY),

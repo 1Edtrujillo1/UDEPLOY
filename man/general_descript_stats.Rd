@@ -7,15 +7,17 @@
 general_descript_stats(
   df,
   num_int_var,
-  statistical_choice = c("TABLES.DESCRIPTIVE_FREQUENCY", "TABLES.CENTRAL_TENDENCY",
-    "TABLES.MODE", "TABLES.DISPERSION_TENDENCY",
+  statistical_choice = c("TABLES.FREQUENCY.BOUNDARIES",
+    "TABLES.FREQUENCY.DESCRIPTIVE_FREQUENCY", "TABLES.MODE.MODE_VALUE",
+    "TABLES.MODE.MODE_DESCRIPTION", "TABLES.TENDENCY.CENTRAL_TENDENCY",
+    "TABLES.TENDENCY.DISPERSION_TENDENCY",
     "TABLES.STATISTICAL_COEFFICIENTS.COEFFICIENTS",
-    "TABLES.STATISTICAL_COEFFICIENTS.DESCRIPTIONS",
+    "TABLES.STATISTICAL_COEFFICIENTS.COEFFICIENTS_DESCRIPTION",
     "TABLES.CONDITIONAL.CONDITIONAL_FREQUENCY",
     "TABLES.CONDITIONAL.CONDITIONAL_EXPENCTATION", "PLOTS.DESCRIPTIVE_FREQUENCY.OGIVE",
-    "PLOTS.DESCRIPTIVE_FREQUENCY.CUMMULATIVE", "PLOTS.DESCRIPTIVE_FREQUENCY.HISTOGRAM",
-    "PLOTS.CENTRAL_TENDENCY.GENERAL_BOXPLOT", "PLOTS.CENTRAL_TENDENCY.BINS_BOXPLOT",
-    "PLOTS.STANDARD_ERROR",      "PLOTS.COMPARING_MEANS")
+    "PLOTS.DESCRIPTIVE_FREQUENCY.CUMMULATIVE", "PLOTS.DESCRIPTIVE_FREQUENCY.HISTOGRAM",  
+       "PLOTS.CENTRAL_TENDENCY.GENERAL_BOXPLOT", "PLOTS.CENTRAL_TENDENCY.BINS_BOXPLOT",
+    "PLOTS.ANALYZING_MEANS.STANDARD_ERROR", "PLOTS.ANALYZING_MEANS.COMPARING_MEANS")
 )
 }
 \arguments{
@@ -28,12 +30,14 @@ general_descript_stats(
 \value{
 "This function returns \emph{different results} based on the arguments \code{statistical_choice} argument".
 \itemize{
-\item If \code{statistical_choice = "TABLES.DESCRIPTIVE_FREQUENCY"}, list where each element is going to be the \emph{frequency table} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
-\item If \code{statistical_choice = "TABLES.CENTRAL_TENDENCY"},list where each element is going to be a \emph{dataset with the mode, mean min, q25, median, q75,p90,p95,p99,max, midrange} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
-\item If \code{statistical_choice = "TABLES.MODE"}, list where each element is going to be an \emph{interpretation of the mode} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
-\item If \code{statistical_choice = "TABLES.DISPERSION_TENDENCY"},list where each element is going to be a \emph{dataset with the variance, standard deviation, interquantil range and range} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
+\item If \code{statistical_choice = "TABLES.FREQUENCY.BOUNDARIES"}, list where each element is going to be a \emph{list containing the bound, bins number, bin size and the interval values} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
+\item If \code{statistical_choice = "TABLES.FREQUENCY.DESCRIPTIVE_FREQUENCY"}, list where each element is going to be the \emph{frequency table} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
+\item If \code{statistical_choice = "TABLES.MODE.MODE_VALUE"}, list where each element is going to be an \emph{the mode(s)} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
+\item If \code{statistical_choice = "TABLES.MODE.MODE_DESCRIPTION"}, list where each element is going to be the \emph{interpretation of the mode(s)} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
+\item If \code{statistical_choice = "TABLES.TENDENCY.CENTRAL_TENDENCY"},list where each element is going to be a \emph{dataset with the mode, mean min, q25, median, q75,p90,p95,p99,max, midrange} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
+\item If \code{statistical_choice = "TABLES.TENDENCY.DISPERSION_TENDENCY"},list where each element is going to be a \emph{dataset with the variance, standard deviation, interquantil range and range} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
 \item If \code{statistical_choice = "TABLES.STATISTICAL_COEFFICIENTS.COEFFICIENTS"}, list where each element is going to be a \emph{list with the coefficient of variation, standard error, skeweness and kurtosis} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
-\item If \code{statistical_choice = "TABLES.STATISTICAL_COEFFICIENTS.DESCRIPTIONS"}, list where each element is going to be a \emph{list with the interpretation of the coefficient of variation, standard error, skeweness and kurtosis} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
+\item If \code{statistical_choice = "TABLES.STATISTICAL_COEFFICIENTS.COEFFICIENTS_DESCRIPTION"}, list where each element is going to be a \emph{list with the interpretation of the coefficient of variation, standard error, skeweness and kurtosis} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
 \item If \code{statistical_choice = "TABLES.CONDITIONAL.CONDITIONAL_FREQUENCY"}, list where each element is going to be a \emph{dataset with the conditional probability on that specific level-combination given the join observations on other specific level-combination} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
 \item If \code{statistical_choice = "TABLES.CONDITIONAL.CONDITIONAL_EXPENCTATION"}, list where each element is going to be a \emph{dataset with the conditional expectancy, conditional variance & conditional standard deviation on that specific level-combination given the join observations on other specific level-combination} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
 \item If \code{statistical_choice = "PLOTS.DESCRIPTIVE_FREQUENCY.OGIVE"}, list where each element is going to be the \emph{ogive plot} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
@@ -41,8 +45,8 @@ general_descript_stats(
 \item If \code{statistical_choice = "PLOTS.DESCRIPTIVE_FREQUENCY.HISTOGRAM"}, list where each element is going to be the \emph{histogram plot} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
 \item If \code{statistical_choice = "PLOTS.CENTRAL_TENDENCY.GENERAL_BOXPLOT"}, list where each element is going to be the \emph{box plot} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
 \item If \code{statistical_choice = "PLOTS.CENTRAL_TENDENCY.BINS_BOXPLOT"}, list where each element is going to be the \emph{box plot on each bin from the frequency table} for the distribution of the \code{num_int_var} on a specific combination level of the factor variables
-\item If \code{statistical_choice = "PLOTS.STANDARD_ERROR"}, \emph{bar plot} comparing the \emph{standard error} of each combination level of the factor variables for the distribution of the \code{num_int_var}.
-\item If \code{statistical_choice = "PLOTS.COMPARING_MEANS"}, \emph{Polar area plot} comparing the \emph{mean} of each combination level of the factor variables for the distribution of the \code{num_int_var}.
+\item If \code{statistical_choice = "PLOTS.ANALYZING_MEANS.STANDARD_ERROR"}, \emph{bar plot} comparing the \emph{standard error} of each combination level of the factor variables for the distribution of the \code{num_int_var}.
+\item If \code{statistical_choice = "PLOTS.ANALYZING_MEANS.STANDARD_ERROR"}, \emph{Polar area plot} comparing the \emph{mean} of each combination level of the factor variables for the distribution of the \code{num_int_var}.
 }
 }
 \description{

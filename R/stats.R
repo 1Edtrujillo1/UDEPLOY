@@ -116,16 +116,15 @@ general_descript_stats <- function(df, num_int_var,
   #append only where is possible: probability conditional to descriptive analytics
   for(each in names(conditional_results)){
     pluck(pluck(descriptive_analytics, "TABLES"), each) <-
-      pluck(pluck(descriptive_analytics, "TABLES"), each) %>% append(list(
-        CONDITIONAL = pluck(conditional_results, each)
-      ))
+      pluck(pluck(descriptive_analytics, "TABLES"), each) %>% append(
+        pluck(conditional_results, each))
   }
 
   # Analyzing the mean of all levels and append to the analysis.
   pluck(pluck(descriptive_analytics, "PLOTS"), "ALL")  <-
     pluck(pluck(descriptive_analytics, "PLOTS"), "ALL") %>% append(list(
       ANALYZING_MEANS = analyzing_means_plots(df = df,
-                                              num_int_var = "PASSENGERID")
+                                              num_int_var = num_int_var)
     ))
 
   # Return Final Result
@@ -710,7 +709,7 @@ conditional_stats <- function(df, num_int_var){
             , with = FALSE]
         walk(c("PROB", "PROB_COND"), ~
                conditional_frequency[,(.x):= scales::percent(x = eval(parse(text = .x)))])
-        list(
+        list(CONDITIONAL = list(
           CONDITIONAL_FREQUENCY = conditional_frequency,
 
           CONDITIONAL_EXPENCTATION = map(each,
@@ -720,7 +719,7 @@ conditional_stats <- function(df, num_int_var){
                         (eval(parse(text = cond_expc_vars[1]))^2)] %>%
                    .[,':='(COND_SD = sqrt(COND_VAR), COND_MEAN_CUAD = NULL)]) %>%
             rbindlist()
-        ) %>% return()
+        )) %>% return()
       }) %>% set_names(names(possibilities_intersect))
     }
     conditional_results

@@ -81,7 +81,7 @@
 #' r <- general_descript_stats(df = df, num_int_var = "PASSENGERID",
 #'                             statistical_choice ="PLOTS.ANALYZING_MEANS.STANDARD_ERROR")
 #' r <- general_descript_stats(df = df, num_int_var = "PASSENGERID",
-#' statistical_choice ="PLOTS.ANALYZING_MEANS.COMPARING_MEANS")
+#'                             statistical_choice ="PLOTS.ANALYZING_MEANS.COMPARING_MEANS")
 #' }
 #'
 general_descript_stats <- function(df, num_int_var,
@@ -122,10 +122,9 @@ general_descript_stats <- function(df, num_int_var,
 
   # Analyzing the mean of all levels and append to the analysis.
   pluck(pluck(descriptive_analytics, "PLOTS"), "ALL")  <-
-    pluck(pluck(descriptive_analytics, "PLOTS"), "ALL") %>% append(list(
-      ANALYZING_MEANS = analyzing_means_plots(df = df,
-                                              num_int_var = num_int_var)
-    ))
+    pluck(pluck(descriptive_analytics, "PLOTS"), "ALL") %>% append(
+      analyzing_means_plots(df = df, num_int_var = num_int_var)
+    )
 
   # Return Final Result
   string_choice <- str_split(string = statistical_choice, pattern = "[.]") %>%
@@ -801,6 +800,6 @@ analyzing_means_plots <- function(df, num_int_var){
                                          color = "transparent")) +
     labs(fill = num_int_var)
 
-  list(STANDARD_ERROR = plot_se,
-       COMPARING_MEANS = comparing_means) %>% return()
+  list(ANALYZING_MEANS = list(STANDARD_ERROR = plot_se,
+                              COMPARING_MEANS = comparing_means)) %>% return()
 }

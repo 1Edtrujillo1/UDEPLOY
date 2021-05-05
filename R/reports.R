@@ -384,12 +384,10 @@ report_creator <- function(df, year = NULL, select_month = NULL,
           final_report <- tryCatch({
             if(any(map(present_past_report, ~.x[,.N] !=0))){
               if(summary == "SUMMARY"){
-                identify_vars <- str_subset(string = names(present_past_report %>%
-                                                             keep(~.x[,.N]!=0) %>% pluck(1)),
-                                            pattern = classes_vector(data_type = c("integer", "numeric"),
-                                                                     df = present_past_report %>%
-                                                                       keep(~.x[,.N]!=0) %>%
-                                                                       pluck(1)))
+                identify_vars <- classes_vector(data_type = c("integer", "numeric"),
+                                                df = present_past_report %>%
+                                                  keep(~.x[,.N]!=0) %>%
+                                                  pluck(1))
 
                 present_past_report_merged <- tryCatch({
                   if(length(factor_variable) != 0){

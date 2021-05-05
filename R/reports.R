@@ -161,7 +161,7 @@ design_report_creator <- function(df, year = NULL, select_month = NULL,
         }, error = function(e) num_int_var)
 
         walk2(list(percentage_variables, not_percentage_variables),
-              list(percent, accounting), function(i, fun){
+              list(formattable::percent, accounting), function(i, fun){
                 walk(i, ~ df[,(.x):= fun(x = eval(parse(text = .x)),
                                          format = "f")])
               })

@@ -803,3 +803,117 @@ analyzing_means_plots <- function(df, num_int_var){
   list(ANALYZING_MEANS = list(STANDARD_ERROR = plot_se,
                               COMPARING_MEANS = comparing_means)) %>% return()
 }
+
+# UNSUPERVISED LEARNING ---------------------------------------------------
+
+#' kmean_samesize
+#'
+#' Create optimal k-mean labels for a dataset.
+#'
+#' 1. Calculate the k-means algorithm on numeric or integar variables from the
+#' dataset \code{df}.
+#' 2. Calculate the euclidean distance between the row df points and each
+#' centroid.
+#' - (x0,y0,z0,..),(x1,y1,z1,...),..,(xk,yk,zk,...) k centroids.
+#' - We are going to have k df s. Therefore, we use _cbind.data.frame_ to create
+#' a df where each df is a variable with length of the original df.
+#' 3. 3.variables used:
+#' - cardinality_sample: number of elements that are going to be for each
+#' cluster (label).
+#' - ctrl_clstr_no_elmnts: this variable helps to control the balance
+#' cluster size.
+#' - label: result balanced label that is going to be created.
+#' 4. 4.For each iteration (each df row):
+#' 5. 4.1. We obtain the row index where is the minimum euclidean distance in that
+#' row of the df 2. defined as bestcluster and in that index we add 1 to the
+#' observation of ctrl_clstr_no_elmnts variable representing adding 1 intended
+#' top to k.
+#' * example:
+#' - iteration 1 - bestcluster = 2
+#' - ctrl_clstr_no_elmnts  = 0 1 0 0 0 0 | row 1 of dataset *euclidean_distance*
+#' - iteration 2 - bestcluster = 2
+#' - ctrl_clstr_no_elmnts  = 0 2 0 0 0 0 | row 2 of dataset *euclidean_distance*
+#' - iteration 3 - bestcluster = 3
+#' - ctrl_clstr_no_elmnts  = 0 2 1 0 0 0 | row 3 of dataset *euclidean_distance*
+#' - iteration 4 - bestcluster = 2
+#' - ctrl_clstr_no_elmnts  = 0 3 1 0 0 0 | row 4 of dataset *euclidean_distance*
+#' 6. 4.2.Add if statement to control and balance the size of each cluster based on
+#' ctrl_clstr_no_elmnts variable. If in the index bestcluster of the observation
+#' of ctrl_clstr_no_elmnts is greater than cardinality_sample then define the
+#' variable on index bestcluster of df2. as NA to not affect the next iteration
+#' and have only the columns in euclidean_distance where ctrl_clstr_no_elmnts is
+#' less than cardinality_sample
+#'
+#' @param df dataset to generate k-means labels
+#' @param  k number of desire clusters
+#' @param nstart number of k-mean iterations for the centroids creation.
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFrom purrr map pluck walk
+#' @importFrom stringr str_glue
+#'
+#' @return balanced k-means label for each observation of the dataset
+#'
+#' @export
+#'
+#' @note
+#' \itemize{
+#'    \item The kmeans algorithm assigns a label for each observation. However,
+#'          it is not necessary to have balanced clusters in the amount of
+#'          observations that is why we use this function.
+#'    \item Kmeans algorithm assign randomly the centroids based on the
+#'          iterations of \code{nstart}. This is why every time this
+#'          function runs the output would have a different order in the labels.
+#'    \item It is recommendable that the size of the population is divisible by
+#'          the number of clusters \code{k} to have equal number of elements in
+#'          each cluster.
+#' }
+#'
+#' @example
+#' label <- kmean_samesize(
+#'      df = datasets::mtcars %>% as.data.table() %>% .[,.(mpg, wt)] %>% .[1:30],
+#'      k = 6
+#' )
+#'
+kmean_samesize <- function(df, k, nstart = 25) {
+  optimal_samples <- kmeans(x = df, centers = k, nstart = nstart)
+
+  euclidean_distance <- map(seq_len(k), function(i) {
+    euclidean_distance_i <- t(
+      t(df) - purrr::pluck(optimal_samples, "centers")[i, ]
+    ) %>%
+      data.table()
+
+    walk(
+      names(euclidean_distance_i),
+      ~ euclidean_distance_i[, (.x) := eval(parse(text = .x))^2]
+    )
+    euclidean_distance_i[, .(sqrt(rowSums(.SD))),
+                         .SDcols = names(euclidean_distance_i)
+    ] %>%
+      setnames(str_glue("EUCLIDEAN_DISTANCE_{i}"))
+  }) %>%
+    cbind.data.frame() %>%
+    data.table()
+
+  cardinality_sample <- df[, .N] / k
+  ctrl_clstr_no_elmnts <- rep(0, k)
+  label <- rep(NA, df[, .N])
+
+  for (i in seq_len(euclidean_distance[, .N])) {
+    bestcluster <- which.min(euclidean_distance[i, ])
+    ctrl_clstr_no_elmnts[bestcluster] <-
+      ctrl_clstr_no_elmnts[bestcluster] + 1
+    label[i] <- bestcluster
+
+    if (ctrl_clstr_no_elmnts[bestcluster] >= cardinality_sample) {
+      euclidean_distance[, (bestcluster) := NA]
+    }
+  }
+  label
+}
+
+
+

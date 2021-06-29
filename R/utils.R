@@ -223,7 +223,7 @@ design_PLOT <- function(plot, font_size = "italic",
   final_plot
 }
 
-# ADDITIONAL --------------------------------------------------------------
+# WORKING WITH DATASETS ---------------------------------------------------
 
 #' interval_between
 #'
@@ -244,3 +244,168 @@ design_PLOT <- function(plot, font_size = "italic",
 #'
 interval_between <- function(x,rng) x >= eval(parse(text = rng[[1]])) & x <= eval(parse(text = rng[[2]]))
 
+#' test_equality
+#'
+#' Check if elements of a variable are unique
+#'
+#' This function has been design of a given vector
+#'
+#' @param var vector variable
+#'
+#' @author  Eduardo Trujillo
+#'
+#' @importFrom purrr map
+#'
+#' @return This function returns \code{two possible results}:
+#' \itemize{
+#'  \item _TRUE_ indicates that the vector has unique elements.
+#'  \item _FALSE_ indicates that the vector has repeated elements.
+#' }
+#' @export
+#'
+#' @example
+#' # unique elements in a variable
+#' test_equality(var = 1:5)
+#' # repeated elements in a variable
+#' test_equality(var = c(1, 2, 3, 1))
+#'
+test_equality <- function(var) {
+  map(
+    list(
+      function(x) {
+        x %>%
+          unique() %>%
+          length()
+      },
+      length
+    ),
+    ~ do.call(what = .x, args = list(var))
+  ) %>%
+    unique() %>%
+    length() == 1
+}
+
+#' dfsplit_test_equality
+#'
+#' Split a dataset into unique and duplicate elements by an _id_ reference
+#'
+#' This function has been design for a given dataset split it by the variable
+#' \code{split_reference} and divide it in sublists. This is if the variable
+#' \code{test_reference} has unique elements or not.
+#'
+#' @param df dataset to split
+#' @param split_reference variable of reference to split dataset
+#' @param test_reference variable of reference to test if elements of
+#' that variable are unique
+#' @param names names of the sublists unique and repeated.
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import  data.table
+#' @importFrom purrr map keep discard set_names
+#'
+#' @return List where each sublist is the unique and the duplicated
+#' observations from \code{df}.
+#'
+#' @export
+#'
+#' @example
+#' dfsplit_test_equality(
+#'    df = data.table(
+#'          ID_CLIENTE = c(1, 2, rep(3, 2), 4, rep(5, 2), rep(6, 3)),
+#'          LABEL = c("a", "b", rep("d", 2), "e", "f", "g", rep("h", 2), "i")
+#'    ),split_reference = "ID_CLIENTE",
+#'    test_reference = "LABEL",
+#'    names = c("UNIQUE_LABEL", "DUPLICATED_LABEL")
+#' )
+#'
+dfsplit_test_equality <- function(df, split_reference, test_reference, names) {
+  map(
+    list(purrr::keep, purrr::discard), function(f) {
+      f(
+        df %>% split(
+          x = .,
+          f = df[, eval(parse(text = split_reference))]
+        ),
+        ~ test_equality(var = .x[, eval(parse(text = test_reference))])
+      )
+    }
+  ) %>%
+    set_names(names)
+}
+
+#' desagregate_df
+#'
+#' Desagregate a dateset for all the observations based on a specific variable
+#' with frequency greater to 1, taking in mind that the id variable needs to
+#' be unique.
+#'
+#' This function has been design to check if the variable \code{id} is unique
+#' filtered by the variable \code{ref_desgte} and if it is then for the
+#' observations in \code{ref_desgte} with frequency greater than one desagregate
+#' in each \code{id}, in other case return the observations in the same way for
+#' each filter \code{id}.
+#'
+#' @param df original dataset to desagregate
+#' @param ref_desgte reference desagregation variable
+#' @param id unique id variable
+#'
+#' @author  Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFrom purrr map map_df keep
+#' @importFrom stringr str_glue
+#'
+#' @return the dataset \code{df} desagregated by the variable \code{ref_desgte}
+#'
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' df <- desagregate_df(df = df, ref_desgte = "FRECUENCIA", id = "ID_CLIENTE")
+#' }
+#'
+desagregate_df <- function(df, ref_desgte, id) {
+  map(
+    df[, eval(parse(text = ref_desgte))] %>% unique(),
+    function(i) {
+      each <- df[eval(parse(text = ref_desgte)) == i]
+      id_var <- each[, eval(parse(text = id))]
+
+      desgte_df <- tryCatch(
+        {
+          if (test_equality(var = id_var)) {
+            desgte_df <- tryCatch(
+              {
+                if (i > 1) {
+                  desgte_df <- map_df(id_var, function(j) {
+                    each_deeper <-
+                      each[eval(parse(text = id)) == j]
+
+                    udeploy::list_of_lists(
+                      no_sublists = each_deeper[
+                        ,
+                        eval(parse(text = ref_desgte))
+                      ],
+                      element_sublists = each_deeper
+                    ) %>%
+                      rbindlist() %>%
+                      .[, (ref_desgte) := 1]
+                  })
+                }
+                desgte_df
+              },
+              error = function(e) each
+            )
+          }
+          desgte_df
+        },
+        error = function(e) str_glue("{id} needs to be unique")
+      )
+      desgte_df
+    }
+  ) %>%
+    purrr::keep(~ isFALSE(is.character(.x))) %>%
+    rbindlist() %>%
+    setorderv(id)
+}

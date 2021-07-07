@@ -409,3 +409,57 @@ desagregate_df <- function(df, ref_desgte, id) {
     rbindlist() %>%
     setorderv(id)
 }
+
+#' split_lower_upper_df
+#'
+#' Dataset comparation split
+#'
+#' Split a dataset based on a comparison between values of a variable and a
+#' constant value.
+#'
+#' @param df dataset to split
+#' @param vars variable reference to split the dataset
+#' @param value_check constant value as comparation reference
+#' @param names of the sublists
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFrom purrr pmap set_names
+#'
+#' @return  list with two sublists:
+#' \itemize{
+#'   \item A sublist with the dataset filter for values of the
+#'        variable \code{vars} under \code{value_check}
+#'   \item A sublist with the dataset filter for values of the
+#'        variable \code{vars} upper \code{value_check}
+#' }
+#'
+#' @export
+#'
+#' @example
+#' data <- data.table(iris)
+#' split_lower_upper_df(
+#'    df = data,
+#'    vars = rep("Petal.Width", 2),
+#'    value_check = rep(data[, mean(Petal.Width)], 2),
+#'    names = c("under_mean", "upper_mean")
+#' )
+#'
+split_lower_upper_df <- function(df, vars, value_check, names) {
+  pmap(
+    list(
+      list(
+        function(x1, x2) {
+          x1 <= x2
+        },
+        function(x1, x2) {
+          x1 > x2
+        }
+      ),
+      vars,
+      value_check
+    ),
+    ~ df[.x(eval(parse(text = ..2)), ..3)]
+  ) %>% set_names(names)
+}

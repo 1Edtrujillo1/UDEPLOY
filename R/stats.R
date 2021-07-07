@@ -806,6 +806,200 @@ analyzing_means_plots <- function(df, num_int_var){
 
 # UNSUPERVISED LEARNING ---------------------------------------------------
 
+#' balanced_desagregated_kmean
+#'
+#' Create the k-means label, having in count a balanced datased based on
+#' a unique id and a particular variable.
+#'
+#' 1. If the user select True on the \code{pre_cleaning} then the function will
+#' clean the dataset as preparation to obtain the k-means labels as a new
+#' dataset variable.
+#' 2. Standarize the variable \code{var_model} according to the levels of
+#' \code{ref_desgte}
+#' 3. Desagregate the dataset for all the observations based on the variable
+#' \code{ref_desgte} with frequency greater to 1, taking in mind that the
+#' \code{id} variable needs to be unique.
+#' 4. Creating the LABEL variable as the optimal k-mean labels for the dataset.
+#' 5. Optimize generated k-labels for desagregated dataset based on the
+#' \code{id} variable.
+#' 6. Improve the dataset labels based on a balanced grouped sum of
+#' \code{var_model} changing the labels that are upper the mean of the previous
+#' to the lower labels.
+#' 7. Improve the dataset labels based on a balanced grouped sum of
+#' \code{var_model} changing the labels that are out of the range population
+#' mean +- 1 standard deviation in the same way as 6.
+#' 8. Again optmize generated k-labels for desagregated datased based on the
+#' \code{id} variable to ensure that each \code{id} has different label.
+#'
+#' @param df dataset to create the labels
+#' @param var_model reference variable of balance
+#' @param ref_desgte reference desagregation variable
+#' @param id id variable reference of balance
+#' @param k number of desire clusters
+#' @param pre_cleaning clean or not previous to apply the k-means model
+#'
+#' @author Eduardo Trujillo
+#'
+#' @seealso \href{https://uc-r.github.io/kmeans_clustering}{k-means algorithm}
+#'
+#' @import data.table
+#' @importFrom tidyr drop_na
+#' @importFrom purrr walk2
+#' @importFrom stringr str_glue
+#'
+#' @return dataset \code{df} with a new created variable "LABEL" with levels up
+#' to \code{k} that balance the whole dataset where:
+#' \itemize{
+#'   \item If \code{pre_cleaning == TRUE}, is going to clean the dataset before
+#'         applying the k-means model
+#'   \item If \code{pre_cleaning == FALSE}, is going to apply the k-means model
+#'          to the provided dataset
+#' }
+#'
+#' @export
+#'
+#' @example
+#' \dontrun{
+#' #Without cleaning at the begining:
+#' k_means_df <- balanced_desagregated_kmean(
+#'      df = df,
+#'      var_model = "VOL_ENTREGA",
+#'      ref_desgte = "FRECUENCIA",
+#'      id = "ID_CLIENTE",
+#'      k = 6,
+#'      pre_cleaning = FALSE
+#' )
+#' k_means_df[, sum(VOL_ENTREGA), by = LABEL]
+#' k_means_df[, .N, by = LABEL]
+#' }
+#'
+balanced_desagregated_kmean <- function(df, var_model, ref_desgte,
+                                        id, k, pre_cleaning = FALSE) {
+  if (pre_cleaning) {
+    df <- copy(df) %>%
+      data.table() %>%
+      delete_outliers() %>%
+      tidyr::drop_na() %>%
+      cardinality_adjustment(k = k)
+  }
+
+  walk2(
+    str_glue("{var_model}_SCALE"), var_model,
+    ~ df[, (.x) := scale(eval(parse(text = .y))), by = ref_desgte]
+  )
+
+  desgte_df <- desagregate_df(
+    df = df,
+    ref_desgte = ref_desgte,
+    id = id
+  ) %>%
+    .[, LABEL := kmean_samesize(
+      df = .[, c(ref_desgte, str_glue("{var_model}_SCALE")),
+             with = FALSE
+      ],
+      k = k
+    )] %>%
+    improve_kmeans_labels(
+      id = id,
+      label = "LABEL",
+      k = k
+    )
+
+  improve_kmeans_labels_variable(
+    df = desgte_df,
+    id = id,
+    label = "LABEL",
+    var_model = var_model,
+    split_type = "mean_split"
+  )
+  improve_kmeans_labels_variable(
+    df = desgte_df,
+    id = id,
+    label = "LABEL",
+    var_model = var_model,
+    split_type = "range_split"
+  )
+
+  desgte_df <- improve_kmeans_labels(
+    df = desgte_df,
+    id = id,
+    label = "LABEL",
+    k = k
+  )
+  desgte_df
+}
+
+# K-MEANS SUBFUNCTIONS ----
+
+#' cardinality_adjustment
+#'
+#' Modify the cardinality of the dataset based on the divisibility with the
+#' desire clusters.
+#'
+#' 1. If the cardinality is divisible by k then return the dataset, if not then.
+#' obtain a number called "cardinality" where under the cardinality of df is
+#' divisible by k
+#' 2. From the elements that are not going to be in the dataset, make a
+#' proportional sum (row cardinlaity + 1 to the last one) to add that proportion
+#' to each numeric and integer variables on the rows of the dataset that are
+#' going to be included.
+#' 3. Define the dataset with rows until the cardinality "cardinality"
+#' 4. Add 2. to each numeric and integer variable of the dataset to have a
+#' balanced dataset.
+#'
+#' @param df dataset to adjust cardinality
+#' @param k number of desire clusters
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFrom purrr walk
+#'
+#' @return the dataset with the cardinality adjusted based on the desire
+#' clusters.
+#'
+#' @example
+#' \dontrun{
+#' adjusted_df <- cardinality_adjustment(df = df, k = 6)
+#' }
+#'
+cardinality_adjustment <- function(df, k) {
+  if (df[, .N] %% k == 0) {
+    result <- df
+  } else {
+    cardinality <- df[, .N]
+
+    while (cardinality %% k != 0) {
+      if (cardinality %% k == 0) {
+        break
+      }
+      cardinality <- cardinality - 1
+    }
+
+    num_int_vars <- classes_vector(
+      data_type = c("integer", "numeric"),
+      df = df
+    )
+
+    proportional_sum <- df[(cardinality + 1):.N,
+                           lapply(.SD, sum),
+                           .SDcols = num_int_vars
+    ] /
+      df[1:cardinality, .N]
+
+
+    df <- df[1:cardinality]
+
+    walk(
+      num_int_vars,
+      ~ df[, (.x) := (eval(parse(text = .x)) +
+                        proportional_sum[, eval(parse(text = .x))])]
+    )
+    result <- df
+  }
+  result
+}
+
 #' kmean_samesize
 #'
 #' Create optimal k-mean labels for a dataset.
@@ -855,8 +1049,6 @@ analyzing_means_plots <- function(df, num_int_var){
 #' @importFrom stringr str_glue
 #'
 #' @return balanced k-means label for each observation of the dataset
-#'
-#' @export
 #'
 #' @note
 #' \itemize{
@@ -915,5 +1107,362 @@ kmean_samesize <- function(df, k, nstart = 25) {
   label
 }
 
+#' improve_kmeans_labels
+#'
+#' Optimize generated K-labels for desagregated dataset
+#'
+#' 1. split the dataset by \code{id} testing unique elements on \code{label}.
+#' Spliting on unique and duplicated sublist of the list improve_kmeans_labels
+#' called \code{df_splited}.
+#' 2. For the duplicated sublist, we split it by the \code{label} testing
+#' unique element on  \code{label} in unique elements and duplicated elements.
+#' - For the duplicated elements, then those are going to be the duplicated
+#' sublist of 1.
+#' - For the unique elements, then those are going to be appended to the unique
+#' sublist 1.
+#' on each same specific sublist of the unique sublist 1.
+#' - Now we have a correct sublist of unique and duplicated elements.
+#' 3. 3.From the duplicated sublist we take the first row of each sublist called
+#' *to_modify* and from the unique sublist we take a random sample of the
+#' same length from the duplicated one called *uniq_modify*. From that sublist
+#' we create a sublist of the k-mean labels called *uniq_labels*.
+#' 4. 4.We modify *to_modify* based on the list of labels *uniq_labels*
+#' obtained from the sublist  *uniq_modify* where if the label of to_modify
+#' is in *uniq_labels* then take a random number between 1 to k except that
+#' labels of *uniq_labels*. In other case take any label from the sublist of
+#' the sublist *uniq_labels*.
+#' 5. 5.The modify sublist *to_modify* is going to be append in the list of
+#' samples *uniq_modify* in each sublist
+#' 6. 6.We modify the original created list \code{df_splited} modifying the
+#' unique sublist elements with *uniq_modify* sublist and modify the duplicated
+#' sublist deleting the first row of each sublist since was used on 3.
+#' 7. 7.Create the original dataset with the modify labels.
+#' 8. 8.If the duplicated sublist still have duplicate elements the apply
+#' recursively the function to change the label of thoss repeated.
+#'
+#' @param df dataset to change labels.
+#' @param id dataset id variable reference of balance
+#' @param label k-means label variable
+#' @param k number of desire clusters
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFrom purrr pluck map set_names flatten modify2 walk2 some
+#'
+#' @return desagregated dataset \code{df} with optimized K-labels
+#'
+#' @note This function is used to improve the k-means labels based on the id
+#' variable.
+#'
+#' @example
+#' \dontrun{
+#' df <- improve_kmeans_labels(
+#'     df = desgte_df,
+#'     id = "ID_CLIENTE",
+#'     label = "LABEL",
+#'     k = 6
+#' )
+#' }
+#'
+improve_kmeans_labels <- function(df, id, label, k) {
+  df_splited <- dfsplit_test_equality(
+    df = df,
+    split_reference = id,
+    test_reference = label,
+    names = c("UNIQUE_LABEL", "DUPLICATED_LABEL")
+  )
 
+  duplicated <- purrr::pluck(df_splited, "DUPLICATED_LABEL")
+  uniq <- purrr::pluck(df_splited, "UNIQUE_LABEL")
 
+  check_duplicated <- map(duplicated, function(i) {
+    dfsplit_test_equality(
+      df = i,
+      split_reference = label,
+      test_reference = label,
+      names = c("DUPLICATED_UNIQUE", "DUPLICATED_DUPLICATED")
+    )
+  }) %>%
+    set_names(names(duplicated))
+
+  duplicated <- purrr::map(check_duplicated, "DUPLICATED_DUPLICATED") %>%
+    map(1)
+
+  uniq_replacement <- purrr::map(check_duplicated, "DUPLICATED_UNIQUE") %>%
+    purrr::flatten()
+  uniq <- replace(
+    x = uniq,
+    list = names(uniq_replacement),
+    values = purrr::modify2(
+      uniq[names(uniq_replacement)],
+      uniq_replacement,
+      ~ list(.x, .y) %>% rbindlist()
+    ) %>%
+      set_names(names(uniq_replacement))
+  )
+
+  to_modify <- map(
+    seq_len(length(duplicated)),
+    ~ pluck(duplicated, .x)[, .SD[1]]
+  )
+
+  uniq_modify <- sample(x = uniq, size = length(to_modify))
+  uniq_labels <- purrr::map(uniq_modify, ~ .x[, eval(parse(text = label))])
+
+  walk2(
+    to_modify, uniq_labels,
+    ~ .x[
+      , (label) := ifelse(eval(parse(text = label)) %in% .y,
+                          sample(x = c(1:k)[-.y], size = 1),
+                          ifelse(length(.y) == 1, .y, sample(x = .y, size = 1))
+      )
+    ]
+  )
+
+  uniq_modify <- purrr::modify2(
+    uniq_modify,
+    to_modify,
+    ~ list(.x, .y) %>% rbindlist()
+  ) %>%
+    set_names(names(uniq_labels))
+
+  df_splited <- replace(
+    x = df_splited,
+    list = c("UNIQUE_LABEL", "DUPLICATED_LABEL"),
+    values = list(
+      replace(x = uniq, list = names(uniq_modify), values = uniq_modify),
+      map(duplicated, ~ .x[-1, ])
+    )
+  )
+
+  df_final <- df_splited %>%
+    flatten() %>%
+    rbindlist() %>%
+    setorderv(id)
+
+  result <- tryCatch(
+    {
+      if (some(pluck(df_splited, "DUPLICATED_LABEL"), ~ .x[, .N > 1])) {
+        result <- improve_kmeans_labels(
+          df = df_final,
+          id = id,
+          label = label,
+          k = k
+        )
+      }
+      result
+    },
+    error = function(e) df_final
+  )
+  result
+}
+
+#' improve_kmeans_labels_variable
+#'
+#' Improve the dataset labels based on a balanced grouped sum of a particular
+#' variable.
+#'
+#' 1. Get the grouped sum of  \code{var_model} by the created k-mean
+#' \code{label} variable.
+#' 2. Calculate the population mean and standard deviation from **1.** as
+#' parameters to modify the \code{label}
+#' 3. create the *value_check* as the constant values as comparation reference
+#' where the user will select based on the parameter \code{split_type}
+#' 4. With help of the function *split_lower_upper_df* we obtain the labels
+#' under and upper the constant values on **3.**
+#' 5. Apply the subfunction *modify_labels_variable_df*
+#'
+#' @param df dataset to change labels.
+#' @param id dataset id variable
+#' @param label k-means label variable
+#' @param var_model reference variable to balance
+#' @param split_type type of label modification.
+#'
+#' @author Eduardo Trujillo
+#'
+#' @import data.table
+#' @importFrom stringr str_glue
+#' @importFrom purrr set_names pluck map
+#'
+#' @return This function modify the \code{label} variable of the \code{df} based
+#' on \code{split_type}:
+#' \itemize{
+#'   \item If \code{split_type == "mean_split"}, change the labels where are
+#'        upper the the mean of *1.* to the lower ones, to balance
+#'        the grouped sum \code{var_model} by the \code{label}
+#'   \item If \code{split_type == "range_split"}, change the labels out of the
+#'         range population mean +- 1 standard deviation of *1.*. Channging
+#'         equally to the previous option.
+#' }
+#'
+#' @note This function is used to improve the k-means labels based on a
+#' particular variable.
+#'
+#' @example
+#' \dontrun{
+#' improve_kmeans_labels_variable(
+#'      df = desgte_df,
+#'      id = "ID_CLIENTE",
+#'      label = "LABEL",
+#'      var_model = "VOL_ENTREGA",
+#'      split_type = "mean_split"
+#' )
+#' }
+#'
+improve_kmeans_labels_variable <-
+  function(df, id, label, var_model,
+           split_type = c("mean_split", "range_split")) {
+    sum_var_model <- str_glue("SUM_{var_model}")
+
+    check <- df[, .(sum(eval(parse(text = var_model)))),
+                by = label
+    ] %>%
+      setnames(old = "V1", new = sum_var_model)
+
+    check_mean <- check[, mean(eval(parse(text = sum_var_model)))]
+    check_sd <- check[, sd(eval(parse(text = sum_var_model)))]
+
+    value_check <- list(
+      list_of_lists(2, check_mean),
+      list(
+        (check_mean - check_sd),
+        (check_mean + check_sd)
+      )
+    ) %>%
+      set_names("mean_split", "range_split") %>%
+      pluck(split_type)
+
+    check_labels <- split_lower_upper_df(
+      df = check,
+      vars = list_of_lists(2, sum_var_model),
+      value_check = value_check,
+      names = c("UNDER_MEAN", "UPPER_MEAN")
+    ) %>% map(~ .x[, eval(parse(text = label))])
+
+    modify_labels_variable_df(
+      df = df,
+      id = id,
+      label = label,
+      var_model = var_model,
+      check = check,
+      check_mean = check_mean,
+      check_labels = check_labels,
+      sum_var_model = sum_var_model
+    )
+  }
+
+#' modify_labels_variable_df
+#'
+#' Improve the dataset labels based on a balanced grouped sum of a particular
+#' variable.
+#'
+#' 1. Based on the separeted labels (4. of improve_kmeans_labels_variable)
+#' \code{check_labels} for the uppers get the difference between the
+#' observations of \code{sum_var_model} in each level on \code{check}
+#' and the mean (total sum of each level where is necessary to quit from
+#' upper and pass to under).
+#' 2. From the previous If we have only one total sum to quit from upper
+#' then return that list in other case get the maximums according as the number
+#' of unders as well as minimums. For the previous get a maximum and minimum for
+#' each under (uppers that are going to pass to the uders)
+#' 3. From the previous set the name of each sublist as the names of the unders
+#' from the list \code{check_labels} to know which is going to pass from upper
+#' to which from unders.
+#' 4. Modify the dataset, based on the previous each under (max and min) change
+#' the label of the uppers to unders to balance the dataset.
+#'
+#' @param df dataset to change labels.
+#' @param id dataset id variable
+#' @param label k-means label variable
+#' @param var_model reference variable to balance
+#' @param check grouped sum from improve_kmeans_labels_variable function
+#' @param check_mean population mean from
+#' improve_kmeans_labels_variable function
+#' @param check_labels labels under and upper the constant values from
+#' improve_kmeans_labels_variable function
+#' @param sum_var_model variable from check that represent the grouped sum from
+#' improve_kmeans_labels_variable function
+#'
+#' @author Eduardo Trujillo
+#'
+#' @seealso \href{https://stackoverflow.com/questions/45231735/match-values-to-nearest-value-in-another-array-in-r}{nearest values}
+#'
+#' @import data.table
+#' @importFrom purrr map pluck set_names walk flatten
+#'
+#' @return The provided dataset \code{df} modifying the \code{label} variable.
+#'
+#' @note This function is a _subfunction_ of **improve_kmeans_labels_variable**
+#'
+#' @example
+#' \dontrun{
+#'    modify_labels_variable_df(
+#'       df = desgte_df,
+#'       id = "ID_CLIENTE",
+#'       label = "LABEL",
+#'       var_model = "VOL_ENTREGA",
+#'       check = check,
+#'       check_mean = check_mean,
+#'       check_labels = check_labels,
+#'       sum_var_model = sum_var_model
+#' )
+#' }
+#'
+modify_labels_variable_df <-
+  function(df, id, label, var_model,
+           check, check_mean, check_labels, sum_var_model) {
+    difference_upper_to_mean <- map(
+      pluck(check_labels, "UPPER_MEAN"),
+      ~ round(check[
+        eval(parse(text = label)) == .x,
+        eval(parse(text = sum_var_model))
+      ]
+      - check_mean)
+    ) %>% set_names(pluck(check_labels, "UPPER_MEAN"))
+
+    difference_upper_to_mean <-
+      tryCatch(
+        {
+          if (length(difference_upper_to_mean) != 1) {
+            result <- map(
+              c(TRUE, FALSE),
+              ~ sort(x = unlist(difference_upper_to_mean), decreasing = .x)[
+                seq_len(length(pluck(check_labels, "UNDER_MEAN")))
+              ] %>%
+                as.list()
+            )
+            result <- map(
+              seq_len(length(pluck(check_labels, "UNDER_MEAN"))),
+              ~ map(result, .x) %>%
+                set_names(map(result, names) %>% map(.x))
+            )
+          }
+          result
+        },
+        error = function(e) list(difference_upper_to_mean)
+      )
+
+    difference_upper_to_mean <- difference_upper_to_mean %>%
+      set_names(pluck(check_labels, "UNDER_MEAN"))
+
+    walk(seq_len(length(difference_upper_to_mean)), function(i) {
+      each <- difference_upper_to_mean[i]
+      each_sublevel <- flatten(each)
+
+      walk(names(each_sublevel), function(x) {
+        id_to_change <- df[eval(parse(text = label)) == x] %>%
+          .[
+            seq_len(which.min(abs(cumsum(eval(parse(text = var_model))) -
+                                    pluck(each_sublevel, x)))),
+            eval(parse(text = id))
+          ]
+
+        df[
+          (eval(parse(text = label)) == x) &
+            (eval(parse(text = id)) %in% id_to_change),
+          (label) := names(each)
+        ]
+      })
+    })
+  }
